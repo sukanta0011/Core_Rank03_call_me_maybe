@@ -35,7 +35,7 @@ class Small_LLM_Model:
         trust_remote_code: bool = True,
     ) -> None:
         self._model_name = model_name
-        
+
         # Auto-select device with priority: mps > cuda > cpu
         if device is None:
             if torch.backends.mps.is_available():
@@ -45,7 +45,7 @@ class Small_LLM_Model:
             else:
                 device = "cpu"
         self._device = device
-        
+
         if dtype is None:
             dtype = torch.float16 if self._device in ["cuda", "mps"] else torch.float32
         self._dtype = dtype
@@ -103,7 +103,7 @@ class Small_LLM_Model:
         # Download and get paths to specific files
         vocab_file_name = self._tokenizer.vocab_files_names.get('vocab_file', "vocab.json")
         vocab_path = hf_hub_download(
-            repo_id=self._model_name, 
+            repo_id=self._model_name,
             filename=vocab_file_name
         )
         return vocab_path

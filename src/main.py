@@ -3,10 +3,10 @@ import time
 
 start = time.time()
 
-from llm_sdk import Small_LLM_Model
+# from llm_sdk import Small_LLM_Model
 
-llm = Small_LLM_Model(device="cpu")
-# file_path = small_llm.get_path_to_vocabulary_json()
+# llm = Small_LLM_Model()
+# # file_path = small_llm.get_path_to_vocabulary_json()
 # txt = "What is the sum of 2 and 3?"
 # tokens = llm._encode(txt)
 # token_list = [token for token in tokens[0]]
@@ -15,8 +15,7 @@ llm = Small_LLM_Model(device="cpu")
 # print(logits)
 # decoded_logits = llm._decode()
 
-tokens = ["What", "Ġis", "Ġthe", "Ġsum", "Ġof",
-          "Ġ2", "Ġand", "Ġ3", "?"]
+tokens = ["{", "fn", "_name"]
 
 path = "/home/sudas/.cache/huggingface/hub/" \
        "models--Qwen--Qwen3-0.6B/snapshots/" \
@@ -27,8 +26,8 @@ with open(path, "r") as fl:
 token_list = [data.get(token) for token in tokens if data.get(token) is not None]
 print(token_list)
 
-logits = llm.get_logits_from_input_ids(token_list)
-print(len(logits))
+# logits = llm.get_logits_from_input_ids(token_list)
+# print(max(logits), min(logits))
 # print(data)
 
 end = time.time()
