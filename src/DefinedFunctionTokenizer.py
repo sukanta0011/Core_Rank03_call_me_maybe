@@ -13,7 +13,7 @@ def initial_prompt_toke(llm):
                  f"Available function names are: {json_txt}\n"
 
     question = f"Question: {txt}\n"
-    answer = ""
+    answer = "fn_name: "
     prompt = f"{pre_prompt} + {question} + {answer}"
     tokens = llm._encode(prompt).tolist()
     return tokens[0]
@@ -100,7 +100,7 @@ class DefinedFunctionTokenizer:
                     except Exception as e:
                         print(f"{e}")
                 self.data_token_by_word[k].append(tokens)
-                
+
                     # self.data_token_by_word[k].append(token)
         # print(self.data_token)
         return self.data_token_by_word
@@ -108,20 +108,24 @@ class DefinedFunctionTokenizer:
 
 class TokenMasking:
     def __init__(self, allowed_token_bank: Dict, prompt_tokens: List[int], llm) -> None:
-        self.allowed_toke = allowed_token_bank
+        self.allowed_tokens = allowed_token_bank
         self.prompt_tokens = prompt_tokens
         self.llm = llm
 
     def generate_function_name(self):
         complete_fn_tokens = []
         token = float("-inf")
+        fn_names = self.allowed_tokens['fn_name'].copy()
+        counter = 0
         try:
             while True:
+                print(counter)
                 print(llm._decode(complete_fn_tokens))
                 logits = llm.get_logits_from_input_ids(self.prompt_tokens)
                 next_allowed_tokens = set()
                 complete_fn_len = len(complete_fn_tokens)
-                for fn in self.allowed_toke['fn_name']:
+                for i, fn in enumerate(fn_names):
+                    print(f"Fn_name tokens: {fn}, {self.allowed_tokens['fn_name'][i]}")
                     if complete_fn_len == 0:
                         if len(fn) > 0:
                             next_allowed_tokens.add(fn[0])
@@ -129,12 +133,15 @@ class TokenMasking:
                         idx = fn.index(token)
                         if len(fn) > idx + 1:
                             next_allowed_tokens.add(fn[idx + 1])
-                    elif self.list_compare(fn, complete_fn_tokens):
+                            fn[idx] = -1
+                    elif self.list_compare(self.allowed_tokens['fn_name'][i],
+                                           complete_fn_tokens):
                         return complete_fn_tokens
                 # print(f"allowed token: {llm._decode(list(next_allowed_tokens))}")
                 token = self.get_next_token(logits, next_allowed_tokens)
                 complete_fn_tokens.append(token)
                 self.prompt_tokens.append(token)
+                counter += 1
         except Exception as e:
             print(e)
             return
@@ -165,7 +172,7 @@ if __name__ == "__main__":
     start = time.time()
     func_tokenizer = DefinedFunctionTokenizer()
     from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model()
+    llm = Small_LLM_Model(device='cpu')
     end = time.time()
     print(f"LLM loaded in {(end - start):.3f}s")
     print(f"{llm._encode('_')}")
@@ -174,6 +181,7 @@ if __name__ == "__main__":
     path = "data/input/functions_definition.json"
     allowed_words = func_tokenizer.load_json(path)
     allowed_tokens = func_tokenizer.tokenize_json_by_word(llm)
+    # allowed_tokens = func_tokenizer.tokenize_json_by_llm(llm)
     print(allowed_tokens)
 
     prompt_tokens = initial_prompt_toke(llm)
