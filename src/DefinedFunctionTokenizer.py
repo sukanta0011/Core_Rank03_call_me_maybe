@@ -144,39 +144,65 @@ class ConstrainDecoder:
         for token in tokens:
             self.prompt_tokens.append(token)
 
+    def re_initialize_prompt_token(self):
+        self.prompt_tokens = []
+
     def generate_function_name(self, allowed_token: List[List[int]]) -> List:
         complete_fn_tokens = []
         token = float("-inf")
+        terminating_token = self.llm._encode(".").tolist()[0][0]
 
         while True:
             # print(llm._decode(complete_fn_tokens))
             logits = llm.get_logits_from_input_ids(self.prompt_tokens)
             next_allowed_tokens = set()
+            next_allowed_tokens.add(terminating_token)
             complete_fn_len = len(complete_fn_tokens)
             for fn in allowed_token:
                 if len(fn) > complete_fn_len:
                     next_allowed_tokens.add(fn[complete_fn_len])
                 ## If two function shares common name upto some extent, this will create problem, need to handle it
-                elif self.list_compare(fn, complete_fn_tokens):
-                    return complete_fn_tokens
+                # elif self.list_compare(fn, complete_fn_tokens):
+                #     return complete_fn_tokens
 
             # print(f"allowed token: {llm._decode(list(next_allowed_tokens))}")
+            print(f"Allowed token: {next_allowed_tokens}")
             token = self.get_next_token(logits, next_allowed_tokens)
-            # print(f"Token: {token}")
+            if token == terminating_token:
+                print("Terminating token used, generation complete.")
+                return complete_fn_tokens
             complete_fn_tokens.append(token)
             self.prompt_tokens.append(token)
 
+    def generate_args_val(self, allowed_tokens: List[int]) -> List:
+        complete_fn_tokens = []
+        token = float("-inf")
+        terminating_token = self.llm._encode("'").tolist()[0][0]
+        allowed_tokens.append(terminating_token)
+
+        while token != terminating_token:
+            # print(llm._decode(complete_fn_tokens))
+            logits = llm.get_logits_from_input_ids(self.prompt_tokens)
+            # print(f"allowed token: {llm._decode(list(next_allowed_tokens))}")
+            print(f"Allowed args: {allowed_tokens}")
+            token = self.get_next_token(logits, set(allowed_tokens))
+            allowed_tokens.pop(allowed_tokens.index(token))
+            complete_fn_tokens.append(token)
+            self.prompt_tokens.append(token)
+        return complete_fn_tokens
+
     def get_next_token(self, logits: List[float],
-                       allowed_idx: Set[int]) -> int:
+                       allowed_idx: set[int]) -> int:
         max_prob = float("-inf")
         max_prob_idx = -1
-        print()
+        # print()
         for token in allowed_idx:
-            print(f"{token}, {self.llm._decode([token])}, {logits[token]}")
+            # print(f"{token}, {self.llm._decode([token])}, {logits[token]}")
             if logits[token] > max_prob:
                 max_prob = logits[token]
                 max_prob_idx = token
-        print(f"Selected token {self.llm._decode([max_prob_idx])}, {logits[max_prob_idx]}")
+        # print(f"Selected token {self.llm._decode([max_prob_idx])},"
+            #   f" {logits[max_prob_idx]}")
         return max_prob_idx
 
     def list_compare(self, list1: List[int], list2: List[int]) -> bool:
@@ -195,9 +221,10 @@ class ConstrainDecoder:
 
 
 class PromptGenerator:
-    def __init__(self, llm, fn_tokens: List[List[int]], args_list: List[List[str]]) -> None:
+    def __init__(self, llm, fn_tokens: List[List[int]], args_list: List[List[str]], fn_names: List[str]) -> None:
         self.llm = llm
         self.fn_tokens = fn_tokens
+        self.fn_names = fn_names
         self.args_list = args_list
         self.constrain_decoder = ConstrainDecoder(llm)
 
@@ -215,17 +242,15 @@ class PromptGenerator:
         print(f"Prompt 2D: {prompt_2D}")
         return prompt_2D
 
-    def generate(self):
+    def generate(self, prompt: str):
         # prompt = "Substitute the word 'cat' with 'dog' in 'The cat sat on " \
         #          "the mat with another cat'"
-        prompt = "Replace all vowels in 'Programming is fun' with asterisks"
-        # prompt_tokens = tokenize_string(prompt, self.llm)
+        # prompt = "how to add numbers 1, 5?"
+        prompt_tokens = tokenize_string(prompt, self.llm)
         prompt_2D = self.tokenize_prompt(prompt)
         print(f"Prompt token 2D: {prompt_2D}")
-        initial_token = initial_prompt_toke(prompt, self.llm)
-        self.constrain_decoder.add_to_prompt(initial_token)
 
-        starting_prompt = "[\n\t{\n\t\tPrompt: " + prompt
+        starting_prompt = "\t{\n\t\tPrompt: " + prompt
         print(f"{starting_prompt}")
         self.add_str_to_prompt(starting_prompt)
         # final_prompt_token = self.constrain_decoder.generate_function_name([prompt_tokens])
@@ -235,30 +260,47 @@ class PromptGenerator:
         final_fn = self.constrain_decoder.generate_function_name(self.fn_tokens)
         # print(final_fn)
 
-        fn_idx = 6
-        print(f"args: {self.args_list[fn_idx]}")
-        initial_arg_token = ",\n\t\targs: {"
-        self.add_str_to_prompt(initial_arg_token)
-        for arg in self.args_list[fn_idx]:
-            self.add_str_to_prompt(f"{str(arg)}: ")
-            arg_val_token = self.constrain_decoder.generate_function_name(prompt_2D)
-            arg_val_str = self.llm._decode(arg_val_token)
-            print(f"arg_val: {arg_val_str}")
-            # initial_arg_token += f"{arg_val_str}, "arg_val_str
-            self.add_str_to_prompt(", ")
-
+        final_fn_name = self.llm._decode(final_fn)
+        if final_fn_name in self.fn_names:
+            fn_idx = self.fn_names.index(final_fn_name)
+            # print(f"args: {self.args_list[fn_idx]}")
+            initial_arg_token = ",\n\t\targs: {"
+            self.add_str_to_prompt(initial_arg_token)
+            total_args = len(self.args_list[fn_idx])
+            for i, arg in enumerate(self.args_list[fn_idx]):
+                self.add_str_to_prompt(f"{str(arg)}: '")
+                arg_val_token = self.constrain_decoder.generate_args_val(prompt_tokens)
+                arg_val_str = self.llm._decode(arg_val_token)
+                # print(f"arg_val: {arg_val_str}")
+                # initial_arg_token += f"{arg_val_str}, "arg_val_str
+                if i < total_args - 1:
+                    self.add_str_to_prompt(", ")
+        self.add_str_to_prompt("},\n\t},")
 
         final_token = self.constrain_decoder.get_current_prompt()
         print(llm._decode(final_token))
 
+    def generate_for_all_prompts(self, prompts: List[str]):
+        for prompt in prompts:
+            self.constrain_decoder.re_initialize_prompt_token()
+            initial_token = initial_prompt_toke(prompt, self.llm)
+            self.constrain_decoder.add_to_prompt(initial_token)
+            self.generate(prompt)
+        # final_token = self.constrain_decoder.get_current_prompt()
+        # print(llm._decode(final_token))
+
 
 if __name__ == "__main__":
+    prompts = [
+        "What is the square root of 16?",
+        "Reverse the string 'hello'"
+    ]
     start = time.time()
     func_tokenizer = DefinedFunctionTokenizer()
     from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model()
-    end = time.time()
-    print(f"LLM loaded in {(end - start):.3f}s")
+    llm = Small_LLM_Model(device="cpu")
+    mid = time.time()
+    print(f"LLM loaded in {(mid - start):.3f}s")
     path = "data/input/functions_definition.json"
     allowed_words = func_tokenizer.load_json(path)
     print(allowed_words)
@@ -276,8 +318,10 @@ if __name__ == "__main__":
     # print(llm._decode(final_fn))
 
     print(f"Arg name: {allowed_words['args_names']}")
-    prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'], allowed_words['args_names'])
-    prompt_generator.generate()
+    prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
+                                       allowed_words['args_names'],
+                                       allowed_words['fn_name'])
+    prompt_generator.generate_for_all_prompts(prompts)
     end = time.time()
-    print(f"function generation time {(end - start):.3f}s")
+    print(f"function generation time {(end - mid):.3f}s")
     # print(split_word("Replace all vowels in 'Programming is fun' with asterisks"))
