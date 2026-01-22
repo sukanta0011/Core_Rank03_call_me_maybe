@@ -16,7 +16,7 @@ def test_llm():
     llm = Small_LLM_Model()
     # file_path = small_llm.get_path_to_vocabulary_json()
     # print(file_path)
-    txt = "What is the multiplication of 2 and 3?"
+    txt = "What is the addition of 2 and 3?"
     json_txt = str(load_json())
     pre_prompt = "You need to act as function generator\n After reading the " \
                  "user question, your job will be to provide the answer\n"\
