@@ -40,5 +40,11 @@
   },
   {
     "prompt": "Greet john"
+  },
+  {
+    "prompt": "What is the sum of three number 173, 45, 405?"
+  },
+  {
+    "prompt": "If I want to add two numbers 2 and 5, how can i do this?"
   }
 ]

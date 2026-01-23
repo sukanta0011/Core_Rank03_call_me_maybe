@@ -21,7 +21,9 @@ def tokenize_string(string: str, llm) -> List[int]:
     return llm._encode(string).tolist()[0]
 
 
-def is_valid_int(val: str) -> bool:
+def is_valid_num(val: str) -> bool:
+    if val == ".":
+        return True
     try:
         int(val)
         return True
@@ -187,7 +189,7 @@ class ConstrainDecoder:
         complete_fn_tokens = []
         token = float("-inf")
         if arg_type == "float" or arg_type == "int":
-            terminating_token = self.llm._encode(' ').tolist()[0][0]
+            terminating_token = self.llm._encode(',').tolist()[0][0]
         else:
             terminating_token = self.llm._encode('"').tolist()[0][0]
         # double_quote = self.llm._encode('"').tolist()[0][0]
@@ -201,14 +203,14 @@ class ConstrainDecoder:
             # print(f"Allowed args: {allowed_tokens}")
             token = self.get_next_token(logits, set(allowed_tokens))
             allowed_tokens.pop(allowed_tokens.index(token))
-            # if arg_type == "float":
-            #     str_val = self.llm._decode(token)
-            #     if is_valid_int(str_val):
-            #         complete_fn_tokens.append(token)
-            #         self.prompt_tokens.append(token)
-            # else:
-            complete_fn_tokens.append(token)
-            self.prompt_tokens.append(token)
+            if arg_type == "float" or arg_type == "int":
+                str_val = self.llm._decode(token)
+                if is_valid_num(str_val):
+                    complete_fn_tokens.append(token)
+                    self.prompt_tokens.append(token)
+            else:
+                complete_fn_tokens.append(token)
+                self.prompt_tokens.append(token)
         return complete_fn_tokens
 
     def get_next_token(self, logits: List[float],
@@ -222,7 +224,7 @@ class ConstrainDecoder:
                 max_prob = logits[token]
                 max_prob_idx = token
         # print(f"Selected token {self.llm._decode([max_prob_idx])},"
-            #   f" {logits[max_prob_idx]}")
+        #       f" {logits[max_prob_idx]}")
         return max_prob_idx
 
     def list_compare(self, list1: List[int], list2: List[int]) -> bool:
@@ -256,17 +258,18 @@ class PromptGenerator:
         token_patch = tokenize_string(str_patch, self.llm)
         self.constrain_decoder.add_to_prompt(token_patch)
 
-    def tokenize_prompt(self, prompt: str) -> List[List[int]]:
-        splitted_prompt = split_word(prompt)
-        prompt_2D = []
+    def tokenize_prompt(self, prompt: str) -> List[int]:
+        splitted_prompt = prompt.split(" ")
+        prompt_tokens = tokenize_string(prompt, self.llm)
         for word in splitted_prompt:
-            tokens = self.llm._encode(word).tolist()
-            prompt_2D.append(tokens[0])
-        # print(f"Prompt 2D: {prompt_2D}")
-        return prompt_2D
+            prompt_tokens.append(self.llm._encode(word).tolist()[0][0])
+        # print(f"Prompt: {prompt_tokens}")
+        return prompt_tokens
 
     def generate(self, prompt: str):
         prompt_tokens = tokenize_string(prompt, self.llm)
+        # prompt_tokens = self.tokenize_prompt(prompt)
+
         # prompt_2D = self.tokenize_prompt(prompt)
         # print(f"Prompt token 2D: {prompt_2D}")
 
@@ -288,13 +291,15 @@ class PromptGenerator:
             self.add_str_to_prompt(initial_arg_token)
             total_args = len(self.args_list[fn_idx])
             for i, arg in enumerate(self.args_list[fn_idx]):
-                if self.args_types[fn_idx][i] == "float" or\
-                    self.args_types[fn_idx][i] == "int":
+                arg_type = self.args_types[fn_idx][i]
+                if arg_type == "float" or arg_type == "int":
                     self.add_str_to_prompt(f'"{arg}": ')
                 else:
                     self.add_str_to_prompt(f'"{arg}": "')
-                arg_val_token = self.constrain_decoder.generate_args_val(prompt_tokens, self.args_types[fn_idx][i])
+                arg_val_token = self.constrain_decoder.generate_args_val(prompt_tokens, arg_type)
                 arg_val_str = self.llm._decode(arg_val_token)
+                if arg_type == 'float' and '.' not in arg_val_str:
+                    self.add_str_to_prompt('.0')
                 # print(f"arg_val: {arg_val_str}")
                 # initial_arg_token += f"{arg_val_str}, "arg_val_str
                 if i < total_args - 1:
@@ -314,51 +319,43 @@ class PromptGenerator:
             final_token = self.constrain_decoder.get_current_prompt()
             print(llm._decode(final_token[len(initial_token):]))
             end = time.time()
-            print(f"Token gen time: {end - start}")
+            print(f"Token generation time: {(end - start):.3f}s")
 
 
 if __name__ == "__main__":
-    # prompts = [
-    #     "What is the square root of 16?",
-    #     "Reverse the string 'hello'",
-    #     "Substitute the word 'cat' with 'dog' in 'The cat sat "
-    #     "on the mat with another cat'",
-    #     "What is the product of 12 and 4?"
-    # ]
-    prompt_loc = "data/input/function_calling_tests.json"
-    with open(prompt_loc, 'r') as fl:
-        data = json.load(fl)
-    prompts = [key["prompt"] for key in data]
-    # print(prompts)
+    try:
+        prompts = [
+            "How do I calculate my age difference if I was born in year 1998 and "
+            "now the year is 2025",
+            "What you have generated 'fn_add_two_numbers' is wrong, i am asking about the difference of numbers, not addition of numbers. please correct it and generate it again. Question: How do I calculate my age difference if I was born in year 1998 and "
+            "now the year is 2025"
+        ]
+        # prompt_loc = "data/input/function_calling_tests.json"
+        # with open(prompt_loc, 'r') as fl:
+        #     data = json.load(fl)
+        # prompts = [key["prompt"] for key in data]
+        # # print(prompts)
 
-    start = time.time()
-    func_tokenizer = DefinedFunctionTokenizer()
-    from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model()
-    mid = time.time()
-    print(f"LLM loaded in {(mid - start):.3f}s")
-    path = "data/input/functions_definition.json"
-    allowed_words = func_tokenizer.load_json(path)
-    # print(allowed_words)
-    # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
-    allowed_tokens = func_tokenizer.tokenize_json_using_llm(llm)
-    # print(allowed_tokens)
+        start = time.time()
+        func_tokenizer = DefinedFunctionTokenizer()
+        from llm_sdk import Small_LLM_Model
+        llm = Small_LLM_Model(device='cpu')
+        mid = time.time()
+        print(f"LLM loaded in {(mid - start):.3f}s")
+        path = "data/input/functions_definition.json"
+        allowed_words = func_tokenizer.load_json(path)
+        # print(allowed_words)
+        # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
+        allowed_tokens = func_tokenizer.tokenize_json_using_llm(llm)
+        # print(allowed_tokens)
 
-    # prompt = "What is the product of 12 and 4?"
-    # initial_token = initial_prompt_toke(prompt)
-
-    # prompt_tokens = initial_prompt_toke(llm)
-    # toke_masking = ConstrainDecoder(llm)
-    # final_fn = toke_masking.generate_function_name(allowed_tokens['fn_name'])
-    # # print(final_fn)
-    # print(llm._decode(final_fn))
-
-    # print(f"Arg name: {allowed_words['args_names']}")
-    prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
-                                       allowed_words['args_names'],
-                                       allowed_words['fn_name'],
-                                       allowed_words['args_types'])
-    prompt_generator.generate_for_all_prompts(prompts)
-    end = time.time()
-    print(f"function generation time {(end - mid):.3f}s")
-    # print(split_word("Replace all vowels in 'Programming is fun' with asterisks"))
+        # print(f"Arg name: {allowed_words['args_names']}")
+        prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
+                                           allowed_words['args_names'],
+                                           allowed_words['fn_name'],
+                                           allowed_words['args_types'])
+        prompt_generator.generate_for_all_prompts(prompts)
+        end = time.time()
+        print(f"function generation time {(end - mid):.3f}s")
+    except Exception as e:
+        print(f"Error: {e}")

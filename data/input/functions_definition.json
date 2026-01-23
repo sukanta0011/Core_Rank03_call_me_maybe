@@ -1,6 +1,6 @@
 [
   {
-    "fn_name": "fn_add_numbers",
+    "fn_name": "fn_add_two_numbers",
     "args_names": [
       "a",
       "b"
@@ -8,6 +8,32 @@
     "args_types": {
       "a": "float",
       "b": "float"
+    },
+    "return_type": "float"
+  },
+  {
+    "fn_name": "fn_sub_num",
+    "args_names": [
+      "big_num",
+      "small_num"
+    ],
+    "args_types": {
+      "big_num": "float",
+      "small_num": "float"
+    },
+    "return_type": "float"
+  },
+  {
+    "fn_name": "fn_add_three_numbers",
+    "args_names": [
+      "a",
+      "b",
+      "c"
+    ],
+    "args_types": {
+      "a": "float",
+      "b": "float",
+      "c": "float"
     },
     "return_type": "float"
   },
