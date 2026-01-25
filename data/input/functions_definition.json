@@ -12,16 +12,23 @@
     "return_type": "float"
   },
   {
-    "fn_name": "fn_sub_num",
+    "fn_name": "fn_unknown",
     "args_names": [
-      "big_num",
-      "small_num"
     ],
     "args_types": {
-      "big_num": "float",
-      "small_num": "float"
+    }
+  },
+  {
+    "fn_name": "fn_cal_age",
+    "args_names": [
+      "current_year",
+      "birth_year"
+    ],
+    "args_types": {
+      "current_year": "int",
+      "birth_year": "int"
     },
-    "return_type": "float"
+    "return_type": "int"
   },
   {
     "fn_name": "fn_add_three_numbers",

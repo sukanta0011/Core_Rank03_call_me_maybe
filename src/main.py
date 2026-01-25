@@ -1,11 +1,9 @@
-import json
 import time
-import numpy as np
-import os
-import sys
-from typing import List
+from src.helper_functions import load_json
+# from src.ConstrainDecoder import ConstrainDecoder
+from src.DefinedFunctionTokenizer import DefinedFunctionTokenizer
+from src.PromptGenerator import PromptGenerator
 
-from helper_functions import load_json
 
 def test_llm():
     # start = time.time()
@@ -74,7 +72,38 @@ def extract_probability():
 
 
 if __name__ == "__main__":
-    test_llm()
-    # extract_probability()
-    # data = extract_probability()
-    # decode_tokens(data, 10)
+    try:
+        prompts = [
+            "How do I calculate my age difference if I was born in year 1996 "
+            "and now the year is 2025",
+            "Some random function generator is needed"
+        ]
+        # prompt_loc = "data/input/function_calling_tests.json"
+        # with open(prompt_loc, 'r') as fl:
+        #     data = json.load(fl)
+        # prompts = [key["prompt"] for key in data]
+        # # print(prompts)
+
+        start = time.time()
+        func_tokenizer = DefinedFunctionTokenizer()
+        from llm_sdk import Small_LLM_Model
+        llm = Small_LLM_Model()
+        mid = time.time()
+        print(f"LLM loaded in {(mid - start):.3f}s")
+        path = "data/input/functions_definition.json"
+        allowed_words = func_tokenizer.load_json(path)
+        # print(allowed_words)
+        # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
+        allowed_tokens = func_tokenizer.tokenize_json_using_llm(llm)
+        # print(allowed_tokens)
+
+        # print(f"Arg name: {allowed_words['args_names']}")
+        prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
+                                           allowed_words['args_names'],
+                                           allowed_words['fn_name'],
+                                           allowed_words['args_types'])
+        prompt_generator.generate_for_all_prompts(prompts)
+        end = time.time()
+        print(f"function generation time {(end - mid):.3f}s")
+    except Exception as e:
+        print(f"Error: {e}")
