@@ -73,16 +73,17 @@ def extract_probability():
 
 if __name__ == "__main__":
     try:
-        prompts = [
-            "How do I calculate my age difference if I was born in year 1996 "
-            "and now the year is 2025",
-            "Some random function generator is needed"
-        ]
-        # prompt_loc = "data/input/function_calling_tests.json"
-        # with open(prompt_loc, 'r') as fl:
-        #     data = json.load(fl)
-        # prompts = [key["prompt"] for key in data]
-        # # print(prompts)
+        import json
+        # prompts = [
+        #     "How do I calculate my age difference if I was born in year 1996 "
+        #     "and now the year is 2025",
+        #     "Some random function generator is needed"
+        # ]
+        prompt_loc = "data/input/function_calling_tests.json"
+        with open(prompt_loc, 'r') as fl:
+            data = json.load(fl)
+        prompts = [key["prompt"] for key in data]
+        # print(prompts)
 
         start = time.time()
         func_tokenizer = DefinedFunctionTokenizer()

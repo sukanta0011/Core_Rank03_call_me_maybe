@@ -31,8 +31,8 @@ class ConstrainDecoder:
             for fn in allowed_token:
                 if len(fn) > complete_fn_len:
                     next_allowed_tokens.add(fn[complete_fn_len])
-                ## If two function shares common name upto some extent,
-                ## this will create problem, need to handle it
+                # If two function shares common name upto some extent,
+                # this will create problem, need to handle it
                 # elif self.list_compare(fn, complete_fn_tokens):
                 #     return complete_fn_tokens
 
