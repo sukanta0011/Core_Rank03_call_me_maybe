@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from typing import List
+from typing import List, Dict
 
 
 def load_json():
@@ -17,6 +17,17 @@ def show_toke_distribution(data: List[float], bin_spacing: int):
     counts, _ = np.histogram(data, bins)
     for b, c in zip(bins, counts):
         print(f"{b}: {c}")
+
+
+def char_feq(data: Dict) -> Dict[str, int]:
+    char_hash: Dict[str, int] = {}
+    for key, _ in data.items():
+        for c in key:
+            if c in char_hash:
+                char_hash[c] += 1
+            else:
+                char_hash[c] = 1
+    return char_hash
 
 
 def decode_tokens(tokens: List[float], threshold: int):

@@ -1,10 +1,8 @@
 import time
 import json
-import sys
 from typing import Dict, List
-import numpy as np
 from pydantic import BaseModel, PrivateAttr
-from memory_profiler import profile
+# from memory_profiler import profile
 
 
 class TokenEncodeDecode(BaseModel):
@@ -26,24 +24,30 @@ class TokenEncodeDecode(BaseModel):
             self._decoder_list[val] = new_key
         del data
 
+    @staticmethod
+    def get_longest_str_in_list(str_list: List[str]) -> int:
+        max_len: int = 0
+        for str in str_list:
+            if len(str) > max_len:
+                max_len = len(str)
+        return max_len
+
     def encoder(self, string: str) -> List[int]:
         tokens: List[int] = []
         str_len = len(string)
-        max_tkn_len = len(max(self._decoder_list))
+        max_tkn_len = self.get_longest_str_in_list(self._decoder_list)
         left_ptr = 0
         if str_len > max_tkn_len:
             right_ptr = left_ptr + max_tkn_len
         else:
             right_ptr = str_len
-        print(f"Max token len: {max_tkn_len}, max_token: {max(self._decoder_list)}")
         while left_ptr < right_ptr:
             sub_str = string[left_ptr: right_ptr]
             if sub_str in self._encoder_dict.keys():
-                print(f"Match found: {sub_str}, {left_ptr}, {right_ptr}")
+                # print(f"Match found: {sub_str}, {left_ptr}, {right_ptr}")
                 tokens.append(self._encoder_dict[sub_str])
                 left_ptr = right_ptr
                 if left_ptr < str_len:
-                    # right_ptr = str_len
                     if (str_len - left_ptr) < max_tkn_len:
                         right_ptr = str_len
                     else:
@@ -63,42 +67,6 @@ class TokenEncodeDecode(BaseModel):
         return string
 
 
-def char_feq(data: Dict) -> Dict[str, int]:
-    char_hash = {}
-    for key, _ in data.items():
-        for c in key:
-            if c in char_hash:
-                char_hash[c] += 1
-            else:
-                char_hash[c] = 1
-    return char_hash
-
-
-def test():
-    start = time.time()
-    from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model()
-    token_path = llm.get_path_to_vocabulary_json()
-    # data = []
-    with open(token_path, 'r') as fl:
-        data = json.load(fl)
-    char_dict = char_feq(data)
-    sorted_dict = sorted(char_dict.items(), key=lambda x: x[1], reverse=True)
-    print(sorted_dict)
-    print(len(char_dict))
-    # token_list = []
-    # token_dict = {}
-    # for key, val in data.items():
-    #     token_dict[val] = key
-    #     token_list.append(key)
-    # print(f"memory data: {sys.getsizeof(data) // 1024} MB")
-    # print(f"memory list: {sys.getsizeof(token_list) // 1024} MB")
-    # print(f"memory: {sys.getsizeof(token_dict) // 1024} MB")
-    # print(f"Token len: {len(token_list)}, {token_list[-1]}")
-    end = time.time()
-    print(f"Time taken: {(end - start):.3f}s")
-
-
 def test_toke_encoder():
     start = time.time()
     from llm_sdk import Small_LLM_Model
@@ -106,6 +74,7 @@ def test_toke_encoder():
     token_path = llm.get_path_to_vocabulary_json()
 
     encoder_decoder = TokenEncodeDecode(path=token_path)
+    # print(len(encoder_decoder._decoder_list))
     # msg = "This is a classic 'hardware vs. software' version mismatch often seen in older workstations. Your NVIDIA GT 1030 has a Pascal architecture (Compute Capability 6.1), but modern versions of PyTorch (like the 2.9.1 required in your dependencies) have dropped support for anything older than Volta (7.0) in their pre-compiled binaries. The workstation's GPU (GT 1030) has a Compute Capability of 6.1, which is deprecated in PyTorch 2.x. To ensure stability and graceful error handling as required by the subject, I forced the model to CPU mode, which still meets the < 5 minute processing requirement for the test prompts."
     msg = "I love coding."
     start_1 = time.time()
