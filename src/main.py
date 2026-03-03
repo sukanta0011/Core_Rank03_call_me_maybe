@@ -3,6 +3,7 @@ from src.helper_functions import load_json
 # from src.ConstrainDecoder import ConstrainDecoder
 from src.DefinedFunctionTokenizer import DefinedFunctionTokenizer
 from src.PromptGenerator import PromptGenerator
+from src.tokenizer import Tokenizer
 
 
 def test_llm():
@@ -12,8 +13,9 @@ def test_llm():
 
     start = time.time()
     llm = Small_LLM_Model()
-    # file_path = small_llm.get_path_to_vocabulary_json()
-    # print(file_path)
+    token_path = llm.get_path_to_vocabulary_json()
+    tokenizer = Tokenizer(path=token_path)
+
     txt = "What is the addition of 2 and 3?"
     json_txt = str(load_json())
     pre_prompt = "You need to act as function generator\n After reading the " \
@@ -23,12 +25,12 @@ def test_llm():
 
     question = f"Question: {txt}\n"
     answer = ""
-    func_tokens = llm._encode(json_txt).tolist()
+    func_tokens = tokenizer.encode(json_txt)
 
     for i in range(100):
         print(answer)
         prompt = f"{pre_prompt} + {question} + {answer}"
-        tokens = llm._encode(prompt).tolist()
+        tokens = tokenizer.encode(prompt)
         logits = llm.get_logits_from_input_ids(tokens[0])
         logits_dict = {idx: tkn for idx, tkn in enumerate(logits)}
 
@@ -38,7 +40,7 @@ def test_llm():
             if val > max_val:
                 max_val = val
                 max_key = key
-        decoded_token = llm._decode([max_key])
+        decoded_token = encoder_decoder.decode([max_key])
         answer += str(decoded_token)
         if "}" in decoded_token:
             break
@@ -72,39 +74,43 @@ def extract_probability():
 
 
 if __name__ == "__main__":
-    try:
-        import json
-        # prompts = [
-        #     "How do I calculate my age difference if I was born in year 1996 "
-        #     "and now the year is 2025",
-        #     "Some random function generator is needed"
-        # ]
-        prompt_loc = "data/input/function_calling_tests.json"
-        with open(prompt_loc, 'r') as fl:
-            data = json.load(fl)
-        prompts = [key["prompt"] for key in data]
-        # print(prompts)
+    # try:
+    import json
+    # prompts = [
+    #     "How do I calculate my age difference if I was born in year 1996 "
+    #     "and now the year is 2025",
+    #     "Hello 'Sukanta'",
+    #     "what is the sum of 2 and 3?"
+    # ]
+    prompt_loc = "data/input/function_calling_tests.json"
+    with open(prompt_loc, 'r') as fl:
+        data = json.load(fl)
+    prompts = [key["prompt"] for key in data]
+    print(prompts)
 
-        start = time.time()
-        func_tokenizer = DefinedFunctionTokenizer()
-        from llm_sdk import Small_LLM_Model
-        llm = Small_LLM_Model()
-        mid = time.time()
-        print(f"LLM loaded in {(mid - start):.3f}s")
-        path = "data/input/functions_definition.json"
-        allowed_words = func_tokenizer.load_json(path)
-        # print(allowed_words)
-        # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
-        allowed_tokens = func_tokenizer.tokenize_json_using_llm(llm)
-        # print(allowed_tokens)
+    start = time.time()
+    func_tokenizer = DefinedFunctionTokenizer()
+    from llm_sdk import Small_LLM_Model
+    llm = Small_LLM_Model(device='cpu')
+    token_path = llm.get_path_to_vocabulary_json()
+    tokenizer = Tokenizer(path=token_path)
+    mid = time.time()
+    print(f"LLM loaded in {(mid - start):.3f}s")
+    path = "data/input/functions_definition.json"
+    allowed_words = func_tokenizer.load_json(path)
+    # print(allowed_words)
+    # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
+    allowed_tokens = func_tokenizer.tokenize_json_using_custom_tokenizer(llm, tokenizer)
+    # print(allowed_tokens)
 
-        # print(f"Arg name: {allowed_words['args_names']}")
-        prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
-                                           allowed_words['args_names'],
-                                           allowed_words['fn_name'],
-                                           allowed_words['args_types'])
-        prompt_generator.generate_for_all_prompts(prompts)
-        end = time.time()
-        print(f"function generation time {(end - mid):.3f}s")
-    except Exception as e:
-        print(f"Error: {e}")
+    # print(f"Arg name: {allowed_words['args_names']}")
+    prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
+                                       allowed_words['args_names'],
+                                       allowed_words['fn_name'],
+                                       allowed_words['args_types'],
+                                       tokenizer)
+    prompt_generator.generate_for_all_prompts(prompts)
+    end = time.time()
+    print(f"function generation time {(end - mid):.3f}s")
+    # except Exception as e:
+    #     print(f"Error: {e.__class__}, {e}")

@@ -49,16 +49,17 @@ def decode_tokens(tokens: List[float], threshold: int):
         print(f"{t}: {p}")
 
 
-def initial_prompt_toke(prompt: str, llm) -> List[int]:
+def initial_prompt_toke(prompt: str, llm, tokenizer) -> List[int]:
     json_txt = str(load_json())
     pre_prompt = "You need to act as function generator\n After reading the " \
                  "user question, your job will be to provide the function "\
                  f"name.\nAvailable function names are: {json_txt}\n"
 
     question = f"Question: {prompt}\n"
-    combined_prompt = f"{pre_prompt} + {question}"
-    tokens = llm._encode(combined_prompt).tolist()
-    return tokens[0]
+    combined_prompt = f"{pre_prompt}\n{question}"
+    # print(f"Initial tokes: {combined_prompt}")
+    tokens = tokenizer.encode(combined_prompt)
+    return tokens
 
 
 def tokenize_string(string: str, llm) -> List[int]:
