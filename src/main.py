@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # prompts = [
     #     # "How do I calculate my age difference if I was born in year 1996 "
     #     # "and now the year is 2025",
-    #     # "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+    #     "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
     #     "Replace all vowels in 'Programming is fun' with asterisks",
     #     # "Greet 'Sukanta'",
     #     "what is the sum of -2?"

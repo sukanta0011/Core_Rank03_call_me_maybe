@@ -56,7 +56,7 @@ class PromptGenerator:
         # final_token = self.constrain_decoder.get_current_prompt()
         # print(llm._decode(final_token))
 
-    def modify_prompt(self, prompt: str) -> str:
+    def modify_prompt_for_regex(self, prompt: str) -> str:
         patterns = {
             "vowels": "[aeiouAEIOU]",
             "asterisks": "*",
@@ -64,11 +64,14 @@ class PromptGenerator:
         }
         for key, val in patterns.items():
             prompt = prompt.replace(key, val)
+        # prompt += "\nExample: replace 'r\d+' in Hello123 by Number, source_string: Hello123, regex: r\'d+', replacement: Number"
         return prompt
 
     def handle_arguments(self, prompt: str, final_fn_name):
         if "regex" in final_fn_name:
-            prompt = self.modify_prompt(prompt)
+            prompt = self.modify_prompt_for_regex(prompt)
+        # if "numbers" in final_fn_name:
+        #     prompt += "\nExample: add -2 and 3, a: -2, b: 3"
         prompt_tokens = self.tokenizer.encode(prompt)
         fn_idx = self.fn_names.index(final_fn_name)
         # print(f"args: {self.args_list[fn_idx]}")

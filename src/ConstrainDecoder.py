@@ -80,15 +80,15 @@ class ConstrainDecoder:
                     complete_fn_tokens.append(token)
                     self.prompt_tokens.append(token)
             else:
-                if str_val == " ":
-                    pass
-                elif " " in str_val:
-                    new_tokens = self.tokenizer.encode(str_val.strip())
-                    complete_fn_tokens.extend(new_tokens)
-                    self.prompt_tokens.extend(new_tokens)
-                else:
-                    complete_fn_tokens.append(token)
-                    self.prompt_tokens.append(token)
+                # if str_val == " ":
+                #     pass
+                # # elif " " in str_val:
+                # #     new_tokens = self.tokenizer.encode(str_val.strip())
+                # #     complete_fn_tokens.extend(new_tokens)
+                # #     self.prompt_tokens.extend(new_tokens)
+                # else:
+                complete_fn_tokens.append(token)
+                self.prompt_tokens.append(token)
 
         return complete_fn_tokens
 

@@ -54,8 +54,15 @@ def initial_prompt_toke(prompt: str, func: List[str],
     path = "data/input/functions_definition.json"
     parser = Parser()
     data_str = parser.load_json(path)
-    pre_prompt = f"Allowed functions: {data_str['fn_name']}, args: {data_str['args_types']}"
+    pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
+    # pre_prompt = ""
+    # for fn_name, args, args_type in zip(data_str['fn_name'], data_str['args_names'], data_str['args_types']):
+    #     pre_prompt += f"{fn_name}, args: {args}, types: {args_type}\n"
 
+    # pre_prompt = ""
+    # for fn_name, args in zip(data_str['fn_name'], data_str['args_names']):
+    #     pre_prompt += f"{fn_name}, args: {args}\n"
+    # print(pre_prompt)
     # json_txt = str(load_json())
     # pre_prompt = f"Allowed functions: {json_txt}"
 
