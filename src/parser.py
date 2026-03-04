@@ -1,12 +1,12 @@
 import json
-from abc import ABC, abstractmethod
+# from abc import ABC, abstractmethod
 # from pydantic import BaseModel
 from typing import Dict
 from src.helper_functions import tokenize_string, split_word
 from src.tokenizer import Tokenizer
 
 
-class DefinedFunctionTokenizer(ABC):
+class Parser:
     def __init__(self):
         self.data_str = {}
         self.data_token = {}

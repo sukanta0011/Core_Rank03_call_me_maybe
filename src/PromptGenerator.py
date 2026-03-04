@@ -31,7 +31,6 @@ class PromptGenerator:
     #     return prompt_tokens
 
     def generate(self, prompt: str):
-        prompt_tokens = self.tokenizer.encode(prompt)
         # prompt_tokens = self.tokenize_prompt(prompt)
 
         # prompt_2D = self.tokenize_prompt(prompt)
@@ -51,37 +50,54 @@ class PromptGenerator:
 
         final_fn_name = self.tokenizer.decode(final_fn[: -1])
         if final_fn_name in self.fn_names:
-            fn_idx = self.fn_names.index(final_fn_name)
-            # print(f"args: {self.args_list[fn_idx]}")
-            initial_arg_token = ',\n\t\t"args": {'
-            self.add_str_to_prompt(initial_arg_token)
-            total_args = len(self.args_list[fn_idx])
-
-            for i, arg in enumerate(self.args_list[fn_idx]):
-                arg_type = self.args_types[fn_idx][i]
-                if arg_type == "float" or arg_type == "int":
-                    self.add_str_to_prompt(f'"{arg}": ')
-                else:
-                    self.add_str_to_prompt(f'"{arg}": "')
-                arg_val_token = self.constrain_decoder.\
-                    generate_args_val(prompt_tokens, arg_type)
-                arg_val_str = self.tokenizer.decode(arg_val_token)
-                if arg_type == 'float' and '.' not in arg_val_str:
-                    self.add_str_to_prompt('.0')
-                # print(f"arg_val: {arg_val_str}")
-                # initial_arg_token += f"{arg_val_str}, "arg_val_str
-                if i < total_args - 1:
-                    self.add_str_to_prompt(", ")
+            self.handle_arguments(prompt, final_fn_name)
         self.add_str_to_prompt("},\n\t},")
 
         # final_token = self.constrain_decoder.get_current_prompt()
         # print(llm._decode(final_token))
 
+    def modify_prompt(self, prompt: str) -> str:
+        patterns = {
+            "vowels": "[aeiouAEIOU]",
+            "asterisks": "*",
+            "digits": "r'\d+'",
+        }
+        for key, val in patterns.items():
+            prompt = prompt.replace(key, val)
+        return prompt
+
+    def handle_arguments(self, prompt: str, final_fn_name):
+        if "regex" in final_fn_name:
+            prompt = self.modify_prompt(prompt)
+        prompt_tokens = self.tokenizer.encode(prompt)
+        fn_idx = self.fn_names.index(final_fn_name)
+        # print(f"args: {self.args_list[fn_idx]}")
+        initial_arg_token = ',\n\t\t"args": {'
+        self.add_str_to_prompt(initial_arg_token)
+        total_args = len(self.args_list[fn_idx])
+
+        for i, arg in enumerate(self.args_list[fn_idx]):
+            arg_type = self.args_types[fn_idx][i]
+            if arg_type == "float" or arg_type == "int":
+                self.add_str_to_prompt(f'"{arg}": ')
+            else:
+                self.add_str_to_prompt(f'"{arg}": "')
+            arg_val_token = self.constrain_decoder.\
+                generate_args_val(prompt_tokens, arg_type)
+            arg_val_str = self.tokenizer.decode(arg_val_token)
+            if arg_type == 'float' and '.' not in arg_val_str and len(arg_val_str) > 0:
+                self.add_str_to_prompt('.0')
+            # print(f"arg_val: {arg_val_str}")
+            # initial_arg_token += f"{arg_val_str}, "arg_val_str
+            if i < total_args - 1:
+                self.add_str_to_prompt(", ")
+
     def generate_for_all_prompts(self, prompts: List[str]):
         for prompt in prompts:
             start = time.time()
             self.constrain_decoder.re_initialize_prompt_token()
-            initial_token = initial_prompt_toke(prompt, self.llm, self.tokenizer)
+            initial_token = initial_prompt_toke(
+                prompt, self.fn_names, self.args_list, self.tokenizer)
             # print(f"prompt: {self.tokenizer.decode(initial_token)}")
             self.constrain_decoder.add_to_prompt(initial_token)
             self.generate(prompt)

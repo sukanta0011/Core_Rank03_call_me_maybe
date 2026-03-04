@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from typing import List, Dict
+from src.tokenizer import Tokenizer
 
 
 def load_json():
@@ -19,6 +20,10 @@ def show_toke_distribution(data: List[float], bin_spacing: int):
         print(f"{b}: {c}")
 
 
+def show_high_probability_tokens(data: List[float], no: int):
+    pass
+
+
 def char_feq(data: Dict) -> Dict[str, int]:
     char_hash: Dict[str, int] = {}
     for key, _ in data.items():
@@ -30,30 +35,34 @@ def char_feq(data: Dict) -> Dict[str, int]:
     return char_hash
 
 
-def decode_tokens(tokens: List[float], threshold: int):
-    path = "/home/sudas/.cache/huggingface/hub/" \
-           "models--Qwen--Qwen3-0.6B/snapshots/" \
-           "c1899de289a04d12100db370d81485cdf75e47ca/vocab.json"
-    with open(path, "r") as fl:
-        data = json.loads(fl.read())
-    high_prob_tokens = [idx for idx, token in
-                        enumerate(tokens) if token > threshold]
-    high_prob = [token for idx, token in
-                        enumerate(tokens) if token > threshold]
-    print(high_prob_tokens)
+# def initial_prompt_toke(prompt: str, llm, tokenizer) -> List[int]:
+#     json_txt = str(load_json())
+#     pre_prompt = "You need to act as function generator\n After reading the " \
+#                  "user question, your job will be to provide the function "\
+#                  f"name.\nAvailable function names are: {json_txt}\n"
 
-    from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model()
-    decoder = llm._decode(high_prob_tokens)
-    for t, p in zip(decoder, high_prob):
-        print(f"{t}: {p}")
+#     question = f"Question: {prompt}\n"
+#     combined_prompt = f"{pre_prompt}\n{question}"
+#     # print(f"Initial tokes: {combined_prompt}")
+#     tokens = tokenizer.encode(combined_prompt)
+#     return tokens
 
+def initial_prompt_toke(prompt: str, func: List[str],
+                        args: List[str],
+                        tokenizer: Tokenizer) -> List[int]:
+    from src.parser import Parser
+    path = "data/input/functions_definition.json"
+    parser = Parser()
+    data_str = parser.load_json(path)
+    pre_prompt = f"Allowed functions: {data_str['fn_name']}, args: {data_str['args_types']}"
 
-def initial_prompt_toke(prompt: str, llm, tokenizer) -> List[int]:
-    json_txt = str(load_json())
-    pre_prompt = "You need to act as function generator\n After reading the " \
-                 "user question, your job will be to provide the function "\
-                 f"name.\nAvailable function names are: {json_txt}\n"
+    # json_txt = str(load_json())
+    # pre_prompt = f"Allowed functions: {json_txt}"
+
+    # pre_prompt = f"Allowed name: {','.join(func)}"
+    # pre_prompt += f"arguments: {str(args)}"
+    # print(pre_prompt)
+    # pre_prompt = ""
 
     question = f"Question: {prompt}\n"
     combined_prompt = f"{pre_prompt}\n{question}"

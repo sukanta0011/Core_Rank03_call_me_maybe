@@ -74,14 +74,22 @@ class ConstrainDecoder:
             # print(f"Allowed args: {set(allowed_tokens)}")
             token = self.get_next_token(logits, set(allowed_tokens))
             allowed_tokens.pop(allowed_tokens.index(token))
+            str_val = self.tokenizer.decode(token)
             if arg_type == "float" or arg_type == "int":
-                str_val = self.tokenizer.decode(token)
-                if is_valid_num(str_val):
+                if is_valid_num(str_val) or str_val == "-":
                     complete_fn_tokens.append(token)
                     self.prompt_tokens.append(token)
             else:
-                complete_fn_tokens.append(token)
-                self.prompt_tokens.append(token)
+                if str_val == " ":
+                    pass
+                elif " " in str_val:
+                    new_tokens = self.tokenizer.encode(str_val.strip())
+                    complete_fn_tokens.extend(new_tokens)
+                    self.prompt_tokens.extend(new_tokens)
+                else:
+                    complete_fn_tokens.append(token)
+                    self.prompt_tokens.append(token)
+
         return complete_fn_tokens
 
     # def get_next_token(self, logits: List[float],
@@ -105,6 +113,11 @@ class ConstrainDecoder:
         allowed_idx = list(allowed_idx)
         mask[allowed_idx] = 0
         max_prob_token = int(np.argmax(logits_np + mask))
+        # print()
+        # for token in allowed_idx:
+        #     print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+        # print(f"Selected token {self.tokenizer.decode([max_prob_token])},"
+        #       f" {logits[max_prob_token]}")
         return max_prob_token
 
     def list_compare(self, list1: List[int], list2: List[int]) -> bool:
