@@ -72,10 +72,12 @@ class ConstrainDecoder:
             logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
             # print(f"allowed token: {llm._decode(list(next_allowed_tokens))}")
             # print(f"Allowed args: {set(allowed_tokens)}")
-            token = self.get_next_token(logits, set(allowed_tokens))
+            token = self.get_next_token(logits, set(allowed_tokens), arg_type)
             allowed_tokens.pop(allowed_tokens.index(token))
             str_val = self.tokenizer.decode(token)
             if arg_type == "float" or arg_type == "int":
+                str_val = str_val.strip()
+                # token = self.tokenizer.encode(str_val)
                 if is_valid_num(str_val) or str_val == "-":
                     complete_fn_tokens.append(token)
                     self.prompt_tokens.append(token)
@@ -107,18 +109,38 @@ class ConstrainDecoder:
     #     return max_prob_idx
 
     def get_next_token(self, logits: List[float],
-                       allowed_idx: Set[int]) -> int:
+                       allowed_idx: Set[int],
+                       arg_type: str = "") -> int:
         logits_np = np.array(logits)
         mask = np.full_like(logits_np, -1e9)
         allowed_idx = list(allowed_idx)
         mask[allowed_idx] = 0
+        if arg_type == "float" or arg_type == "int":
+            self.create_toke_biasing(mask, allowed_idx, "-", 5)
         max_prob_token = int(np.argmax(logits_np + mask))
+
         # print()
-        # for token in allowed_idx:
-        #     print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-        # print(f"Selected token {self.tokenizer.decode([max_prob_token])},"
-        #       f" {logits[max_prob_token]}")
+        tokens_with_prob = ""
+        for token in allowed_idx:
+            # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+            tokens_with_prob += f"{self.tokenizer.decode([token])}({round(logits[token], 2)}),"
+        tokens_with_prob += f"\033[92mSelected token: {self.tokenizer.decode([max_prob_token])}\033[0m"
+        print(tokens_with_prob)
         return max_prob_token
+
+    def create_toke_biasing(self, mask: np.array, allowed_idx: List[int],
+                            bias_tokens: str,
+                            bias_value: int = 5) -> None:
+        new_idx: List[int] = []
+        # print(allowed_idx)
+        for token_idx in allowed_idx:
+            token_str = self.tokenizer.decode(token_idx)
+            # print(f"{token_str}: {token_str in bias_tokens}")
+            if token_str.strip() in bias_tokens:
+                # print(f"Matching toke: {token_str}")
+                new_idx.append(token_idx)
+        mask[new_idx] = bias_value
+
 
     def list_compare(self, list1: List[int], list2: List[int]) -> bool:
         # print(f"List1: {self.llm._decode(list1)}")

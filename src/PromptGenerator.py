@@ -60,11 +60,18 @@ class PromptGenerator:
         patterns = {
             "vowels": "[aeiouAEIOU]",
             "asterisks": "*",
-            "digits": "r'\d+'",
+            "digits": '"r\d+"'
         }
+        # patterns = {
+        #     "vowels": "'vowels'",
+        #     "asterisks": "'asterisks'",
+        #     "digits": "'digits'",
+        # }
         for key, val in patterns.items():
             prompt = prompt.replace(key, val)
+        print(f"Prompt: {prompt}")
         # prompt += "\nExample: replace 'r\d+' in Hello123 by Number, source_string: Hello123, regex: r\'d+', replacement: Number"
+        # prompt += "Important: When extracting a regex for digits, use \d+. For vowels, use [aeiou]."
         return prompt
 
     def handle_arguments(self, prompt: str, final_fn_name):

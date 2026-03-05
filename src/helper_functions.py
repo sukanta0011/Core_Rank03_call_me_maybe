@@ -50,25 +50,29 @@ def char_feq(data: Dict) -> Dict[str, int]:
 def initial_prompt_toke(prompt: str, func: List[str],
                         args: List[str],
                         tokenizer: Tokenizer) -> List[int]:
-    from src.parser import Parser
-    path = "data/input/functions_definition.json"
-    parser = Parser()
-    data_str = parser.load_json(path)
-    pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
-    # pre_prompt = ""
+    # from src.parser import Parser
+    # path = "data/input/functions_definition.json"
+    # parser = Parser()
+    # data_str = parser.load_json(path)
+    # # pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
+    # pre_prompt = "Allowed functions[arguments]\n"
     # for fn_name, args, args_type in zip(data_str['fn_name'], data_str['args_names'], data_str['args_types']):
-    #     pre_prompt += f"{fn_name}, args: {args}, types: {args_type}\n"
+    #     pre_prompt += f"{fn_name}["
+    #     arg_with_types = ""
+    #     for a, t in zip(args, args_type):
+    #         arg_with_types += f"{a}:{t},"
+    #     pre_prompt += f"{arg_with_types[:-1]}]\n"
 
     # pre_prompt = ""
-    # for fn_name, args in zip(data_str['fn_name'], data_str['args_names']):
+    # for fn_name, args in zip(data_str['fn_name'], data_str['args_types']):
     #     pre_prompt += f"{fn_name}, args: {args}\n"
     # print(pre_prompt)
-    # json_txt = str(load_json())
-    # pre_prompt = f"Allowed functions: {json_txt}"
+    json_txt = str(load_json())
+    pre_prompt = f"Allowed functions: {json_txt}"
 
     # pre_prompt = f"Allowed name: {','.join(func)}"
     # pre_prompt += f"arguments: {str(args)}"
-    # print(pre_prompt)
+    print(pre_prompt)
     # pre_prompt = ""
 
     question = f"Question: {prompt}\n"

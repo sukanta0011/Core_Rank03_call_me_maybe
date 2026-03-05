@@ -76,24 +76,25 @@ def extract_probability():
 if __name__ == "__main__":
     # try:
     import json
-    # prompts = [
-    #     # "How do I calculate my age difference if I was born in year 1996 "
-    #     # "and now the year is 2025",
-    #     "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
-    #     "Replace all vowels in 'Programming is fun' with asterisks",
-    #     # "Greet 'Sukanta'",
-    #     "what is the sum of -2?"
-    # ]
-    prompt_loc = "data/input/function_calling_tests.json"
-    with open(prompt_loc, 'r') as fl:
-        data = json.load(fl)
-    prompts = [key["prompt"] for key in data]
+    prompts = [
+        # "How do I calculate my age difference if I was born in year 1996 "
+        # "and now the year is 2025",
+        "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+        # "Replace all vowels in 'Programming is fun' with asterisks",
+        # "Greet 'Sukanta'",
+        # "what is the sum of -2 and 3?",
+        # "what is the total - sum of 2 and 3?"
+    ]
+    # prompt_loc = "data/input/function_calling_tests.json"
+    # with open(prompt_loc, 'r') as fl:
+    #     data = json.load(fl)
+    # prompts = [key["prompt"] for key in data]
     # print(prompts)
 
     start = time.time()
     func_tokenizer = Parser()
     from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model()
+    llm = Small_LLM_Model(device='cpu')
     token_path = llm.get_path_to_vocabulary_json()
     tokenizer = Tokenizer(path=token_path)
     mid = time.time()

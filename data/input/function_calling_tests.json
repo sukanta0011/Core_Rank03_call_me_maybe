@@ -3,10 +3,16 @@
     "prompt": "What is the square root of 16?"
   },
   {
+    "prompt": "What is the square root of 50.5?"
+  },
+  {
     "prompt": "Reverse the string 'hello'"
   },
   {
     "prompt": "Reverse the string 'world'"
+  },
+  {
+    "prompt": "Reverse the string sukanta"
   },
   {
     "prompt": "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'"
@@ -42,9 +48,18 @@
     "prompt": "Greet john"
   },
   {
+    "prompt": "Hello john"
+  },
+  {
+    "prompt": "Hello 'Sukanta'"
+  },
+  {
     "prompt": "What is the sum of three number 173, 45, 405?"
   },
   {
     "prompt": "If I want to add two numbers 2 and 5, how can i do this?"
+  },
+  {
+    "prompt": "Add the 2 numbers I told you about, which are 10 and 20."
   }
 ]
