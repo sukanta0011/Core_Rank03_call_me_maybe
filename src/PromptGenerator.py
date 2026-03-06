@@ -60,13 +60,9 @@ class PromptGenerator:
         patterns = {
             "vowels": "[aeiouAEIOU]",
             "asterisks": "*",
-            "digits": '"r\d+"'
+            "digits": "r'\d+'"
         }
-        # patterns = {
-        #     "vowels": "'vowels'",
-        #     "asterisks": "'asterisks'",
-        #     "digits": "'digits'",
-        # }
+
         for key, val in patterns.items():
             prompt = prompt.replace(key, val)
         print(f"Prompt: {prompt}")
@@ -95,6 +91,7 @@ class PromptGenerator:
             arg_val_token = self.constrain_decoder.\
                 generate_args_val(prompt_tokens, arg_type)
             arg_val_str = self.tokenizer.decode(arg_val_token)
+            # print(f"{arg}: {arg_val_str}")
             if arg_type == 'float' and '.' not in arg_val_str and len(arg_val_str) > 0:
                 self.add_str_to_prompt('.0')
             # print(f"arg_val: {arg_val_str}")

@@ -50,29 +50,36 @@ def char_feq(data: Dict) -> Dict[str, int]:
 def initial_prompt_toke(prompt: str, func: List[str],
                         args: List[str],
                         tokenizer: Tokenizer) -> List[int]:
-    # from src.parser import Parser
-    # path = "data/input/functions_definition.json"
-    # parser = Parser()
-    # data_str = parser.load_json(path)
-    # # pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
-    # pre_prompt = "Allowed functions[arguments]\n"
-    # for fn_name, args, args_type in zip(data_str['fn_name'], data_str['args_names'], data_str['args_types']):
-    #     pre_prompt += f"{fn_name}["
-    #     arg_with_types = ""
-    #     for a, t in zip(args, args_type):
-    #         arg_with_types += f"{a}:{t},"
-    #     pre_prompt += f"{arg_with_types[:-1]}]\n"
+    from src.parser import Parser
+    path = "data/input/functions_definition.json"
+    parser = Parser()
+    data_str = parser.load_json(path)
+    # pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
+    # pre_prompt = "Available function format: fn_name(args: args_type) -> return_type\nAll functions: \n"
+    pre_prompt = "Choose from the following functions to answer user question.\n"
+    for id, fn_name in enumerate(data_str['fn_name']):
+        pre_prompt += f"{fn_name}("
+        arg_with_types = ""
+        for a, t in zip(data_str['args_names'][id], data_str['args_types'][id]):
+            arg_with_types += f"{a}: {t}, "
+        pre_prompt += f"{arg_with_types[:-2]})"
+        pre_prompt += f" -> {data_str['return_type'][id]}\n"
+
+    example1 = "Example 1: prompt: Greet Sukanta -> fn_name: fn_greet, args: {name: Sukanta}\n"
+    example2 = "Example 2: prompt: Substitute the digits in the string 'Hello 34 I'm 233 years old' with NUMBERS -> fn_name: fn_substitute_string_with_regex, args: {source_string: Hello 34 I'm 233 years old, regex: r'\d+', replacement: NUMBER}\n"
+    pre_prompt += example1
+    pre_prompt += example2
 
     # pre_prompt = ""
     # for fn_name, args in zip(data_str['fn_name'], data_str['args_types']):
     #     pre_prompt += f"{fn_name}, args: {args}\n"
     # print(pre_prompt)
-    json_txt = str(load_json())
-    pre_prompt = f"Allowed functions: {json_txt}"
+    # json_txt = str(load_json())
+    # pre_prompt = f"Allowed functions: {json_txt}"
 
     # pre_prompt = f"Allowed name: {','.join(func)}"
     # pre_prompt += f"arguments: {str(args)}"
-    print(pre_prompt)
+    # print(pre_prompt)
     # pre_prompt = ""
 
     question = f"Question: {prompt}\n"

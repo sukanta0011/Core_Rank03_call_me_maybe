@@ -16,7 +16,8 @@
     "args_names": [
     ],
     "args_types": {
-    }
+    },
+    "return_type": "None"
   },
   {
     "fn_name": "fn_cal_age",
