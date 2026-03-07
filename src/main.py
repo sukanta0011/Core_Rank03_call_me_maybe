@@ -93,7 +93,7 @@ if __name__ == "__main__":
     with open(prompt_loc, 'r') as fl:
         data = json.load(fl)
     prompts = [key["prompt"] for key in data]
-    print(prompts)
+    # print(prompts)
 
     start = time.time()
     func_tokenizer = Parser()
