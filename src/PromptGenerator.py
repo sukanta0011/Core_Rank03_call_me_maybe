@@ -60,7 +60,7 @@ class PromptGenerator:
         patterns = {
             "vowels": "[aeiouAEIOU]",
             "asterisks": "*",
-            "digits": "r'\d+'"
+            "digits": "r'\\d+'"
         }
 
         for key, val in patterns.items():
