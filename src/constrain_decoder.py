@@ -111,12 +111,12 @@ class ConstrainDecoder:
         max_prob_token = int(np.argmax(logits_np + mask))
 
         # # print()
-        tokens_with_prob = ""
-        for token in allowed_idx:
-            # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-            tokens_with_prob += f"{self.tokenizer.decode([token])}({round(logits[token], 2)}),"
-        tokens_with_prob += f"\033[92mSelected token: {self.tokenizer.decode([max_prob_token])}\033[0m"
-        print(tokens_with_prob)
+        # tokens_with_prob = ""
+        # for token in allowed_idx:
+        #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+        #     tokens_with_prob += f"{self.tokenizer.decode([token])}({round(logits[token], 2)}),"
+        # tokens_with_prob += f"\033[92mSelected token: {self.tokenizer.decode([max_prob_token])}\033[0m"
+        # print(tokens_with_prob)
         return max_prob_token
 
     def get_next_str_token(self, logits: List[float],

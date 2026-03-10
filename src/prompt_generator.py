@@ -1,6 +1,6 @@
 import time
 from typing import List
-from src.ConstrainDecoder import ConstrainDecoder
+from src.constrain_decoder import ConstrainDecoder
 from src.tokenizer import Tokenizer
 from src.helper_functions import tokenize_string, initial_prompt_toke
 
