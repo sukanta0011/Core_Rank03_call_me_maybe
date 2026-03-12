@@ -5,10 +5,12 @@ from src.tokenizer import Tokenizer
 
 
 class ConstrainDecoder:
-    def __init__(self, llm, tokenizer) -> None:
+    def __init__(self, llm, encode, decode) -> None:
         self.prompt_tokens = []
         self.llm = llm
-        self.tokenizer = tokenizer
+        # self.tokenizer = tokenizer
+        self.encode = encode
+        self.decode = decode
 
     def get_current_prompt(self) -> List[int]:
         return self.prompt_tokens
@@ -24,7 +26,7 @@ class ConstrainDecoder:
     def generate_function_name(self, allowed_token: List[List[int]]) -> List:
         complete_fn_tokens = []
         token = float("-inf")
-        terminating_token = self.tokenizer.encode('"')
+        terminating_token = self.encode('"')
         # print(f"prompt: {self.tokenizer.decode(self.prompt_tokens)}")
 
         while token != terminating_token[0] and len(complete_fn_tokens) < 20:
@@ -59,9 +61,9 @@ class ConstrainDecoder:
         complete_arg_tokens = []
         token = float("-inf")
         if arg_type == "float" or arg_type == "int":
-            terminating_token = self.tokenizer.encode(',')
+            terminating_token = self.encode(',')
         else:
-            terminating_token = self.tokenizer.encode('"')
+            terminating_token = self.encode('"')
         # print(f"allowed tokens: {self.tokenizer.decode(allowed_tokens)}")
         allowed_tokens.extend(terminating_token)
 
@@ -70,16 +72,16 @@ class ConstrainDecoder:
             if arg_type == "float" or arg_type == "int":
                 token = self.get_next_numeric_token(logits, set(allowed_tokens))
                 allowed_tokens.pop(allowed_tokens.index(token))
-                str_val = self.tokenizer.decode(token)
+                str_val = self.decode(token)
                 str_val = str_val.strip()
                 # token = self.tokenizer.encode(str_val)
                 if is_valid_num(str_val) or str_val == "-":
                     complete_arg_tokens.append(token)
                     self.prompt_tokens.append(token)
             else:
-                token = self.get_next_str_token(logits, set(allowed_tokens), 10)
+                token = self.get_next_str_token(logits, set(allowed_tokens), 5)
                 # allowed_tokens.pop(allowed_tokens.index(token))
-                str_val = self.tokenizer.decode(token)
+                str_val = self.decode(token)
                 # print(f"selected toke: {str_val}")
                 complete_arg_tokens.append(token)
                 self.prompt_tokens.append(token)
@@ -123,8 +125,19 @@ class ConstrainDecoder:
                            allowed_idx: Set[int], soft_bias: int = 5) -> int:
         logits_np = np.array(logits)
         allowed_idx = list(allowed_idx)
-        logits_np[allowed_idx] += soft_bias
+        # logits_np[allowed_idx] += soft_bias
         max_prob_token = int(np.argmax(logits_np))
+
+        # # extract top 10 tokens
+        # sorted_idx  = np.argsort(logits_np)
+        # top_ten = sorted_idx[-5:]
+        # # top_ten = logits_np[sorted_idx][-10:].tolist()
+        # tokens_with_prob = ""
+        # for token in top_ten:
+        #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+        #     tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
+        # tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
+        # print(tokens_with_prob)
         return max_prob_token
 
     def get_next_numeric_token(self, logits: List[float],
@@ -144,7 +157,7 @@ class ConstrainDecoder:
         new_idx: List[int] = []
         # print(allowed_idx)
         for token_idx in allowed_idx:
-            token_str = self.tokenizer.decode(token_idx)
+            token_str = self.decode(token_idx)
             # print(f"{token_str}: {token_str in bias_tokens}")
             if token_str.strip() in bias_tokens:
                 # print(f"Matching toke: {token_str}")

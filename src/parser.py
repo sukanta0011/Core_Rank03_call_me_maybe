@@ -1,7 +1,7 @@
 import json
 # from abc import ABC, abstractmethod
 # from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Callable
 from src.helper_functions import tokenize_string, split_word
 from src.tokenizer import Tokenizer
 
@@ -27,19 +27,19 @@ class Parser:
 
         return self.data_str
 
-    def tokenize_json_using_custom_tokenizer(self, llm, tokenizer: Tokenizer) -> Dict:
+    def tokenize_json_using_custom_tokenizer(self, encode: Callable) -> Dict:
         for k, v in self.data_str.items():
             if k not in self.data_token.keys():
                 self.data_token[k] = []
             for word in v:
                 if isinstance(word, str):
-                    tokens = tokenizer.encode(word)
+                    tokens = encode(word)
                     self.data_token[k].append(tokens)
                 elif isinstance(word, list):
                     # for token in tokens[0]:
                     tokens = []
                     for sub_word in word:
-                        token = tokenizer.encode(sub_word)
+                        token = encode(sub_word)
                         tokens.append(token)
                 self.data_token[k].append(tokens)
         # print(self.data_token)

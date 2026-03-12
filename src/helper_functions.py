@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Callable
 from src.tokenizer import Tokenizer
 
 
@@ -49,14 +49,15 @@ def char_feq(data: Dict) -> Dict[str, int]:
 
 def initial_prompt_toke(prompt: str, func: List[str],
                         args: List[str],
-                        tokenizer: Tokenizer) -> List[int]:
+                        encode: Callable) -> List[int]:
     from src.parser import Parser
     path = "data/input/functions_definition.json"
     parser = Parser()
     data_str = parser.load_json(path)
-    # pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
-    # pre_prompt = "Available function format: fn_name(args: args_type) -> return_type\nAll functions: \n"
-    pre_prompt = "Choose from the following functions to answer user question.\n"
+    pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
+    pre_prompt = ""
+    pre_prompt += "Available function format: fn_name(args: args_type) -> return_type\nAll functions: \n"
+    pre_prompt += "Choose from the following functions to answer user question.\n"
     for id, fn_name in enumerate(data_str['fn_name']):
         pre_prompt += f"{fn_name}("
         arg_with_types = ""
@@ -64,11 +65,12 @@ def initial_prompt_toke(prompt: str, func: List[str],
             arg_with_types += f"{a}: {t}, "
         pre_prompt += f"{arg_with_types[:-2]})"
         pre_prompt += f" -> {data_str['return_type'][id]}\n"
+        pre_prompt += ""
 
-    example1 = "Example 1: prompt: Greet Sukanta -> fn_name: fn_greet, args: {name: Sukanta}\n"
-    example2 = "Example 2: prompt: Substitute the digits in the string 'Hello 34 I'm 233 years old' with NUMBERS -> fn_name: fn_substitute_string_with_regex, args: {source_string: Hello 34 I'm 233 years old, regex: r'\d+', replacement: NUMBER}\n"
-    pre_prompt += example1
-    pre_prompt += example2
+    # example1 = "Example 1: 'prompt': 'Greet Sukanta' -> 'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
+    # example2 = "Example 2: 'prompt': 'Substitute the r'\d+' in the string 'Hello 34 I'm 233 years old' with NUMBERS' -> 'fn_name': 'fn_substitute_string_with_regex', 'args': {'source_string': 'Hello 34 I'm 233 years old', regex: r'\d+', 'replacement': 'NUMBER'}\n"
+    # pre_prompt += example1
+    # pre_prompt += example2
 
     # pre_prompt = ""
     # for fn_name, args in zip(data_str['fn_name'], data_str['args_types']):
@@ -82,15 +84,16 @@ def initial_prompt_toke(prompt: str, func: List[str],
     # print(pre_prompt)
     # pre_prompt = ""
 
-    question = f"Question: {prompt}\n"
-    combined_prompt = f"{pre_prompt}\n{question}"
+    # question = f"Question: {prompt}\n"
+    combined_prompt = f"{pre_prompt}\n"
     # print(f"Initial tokes: {combined_prompt}")
-    tokens = tokenizer.encode(combined_prompt)
+    tokens = encode(combined_prompt)
+    # print(tokens)
     return tokens
 
 
 def tokenize_string(string: str, llm) -> List[int]:
-    return llm._encode(string).tolist()[0]
+    return llm._encode(string)
 
 
 def is_valid_num(val: str) -> bool:

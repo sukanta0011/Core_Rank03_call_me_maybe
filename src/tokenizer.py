@@ -1,6 +1,6 @@
 import time
 import json
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from pydantic import BaseModel, PrivateAttr
 # from memory_profiler import profile
 

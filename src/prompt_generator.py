@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Callable
 from src.constrain_decoder import ConstrainDecoder
 from src.tokenizer import Tokenizer
 from src.helper_functions import tokenize_string, initial_prompt_toke
@@ -8,18 +8,21 @@ from src.helper_functions import tokenize_string, initial_prompt_toke
 class PromptGenerator:
     def __init__(self, llm, fn_tokens: List[List[int]],
                  args_list: List[List[str]], fn_names: List[str],
-                 args_types: List[List[str]], tokenizer: Tokenizer) -> None:
+                 args_types: List[List[str]],
+                 encode: Callable, decode: Callable) -> None:
         self.llm = llm
         self.fn_tokens = fn_tokens
         self.fn_names = fn_names
         self.args_list = args_list
         self.args_types = args_types
-        self.constrain_decoder = ConstrainDecoder(llm, tokenizer)
-        self.tokenizer = tokenizer
+        self.constrain_decoder = ConstrainDecoder(llm, encode, decode)
+        # self.tokenizer = tokenizer
+        self.encode = encode
+        self.decode = decode
 
     def add_str_to_prompt(self, string: str) -> None:
         str_patch = string
-        token_patch = self.tokenizer.encode(str_patch)
+        token_patch = self.encode(str_patch)
         self.constrain_decoder.add_to_prompt(token_patch)
 
     # def tokenize_prompt(self, prompt: str) -> List[int]:
@@ -48,7 +51,7 @@ class PromptGenerator:
             generate_function_name(self.fn_tokens)
         # print(self.tokenizer.decode(final_fn[: -1]))
 
-        final_fn_name = self.tokenizer.decode(final_fn[: -1])
+        final_fn_name = self.decode(final_fn[: -1])
         if final_fn_name in self.fn_names:
             self.handle_arguments(prompt, final_fn_name)
         self.add_str_to_prompt("},\n\t},")
@@ -75,7 +78,7 @@ class PromptGenerator:
             prompt = self.modify_prompt_for_regex(prompt)
         # if "numbers" in final_fn_name:
         #     prompt += "\nExample: add -2 and 3, a: -2, b: 3"
-        prompt_tokens = self.tokenizer.encode(prompt)
+        prompt_tokens = self.encode(prompt)
         fn_idx = self.fn_names.index(final_fn_name)
         # print(f"args: {self.args_list[fn_idx]}")
         initial_arg_token = ',\n\t\t"args": {'
@@ -87,10 +90,11 @@ class PromptGenerator:
             if arg_type == "float" or arg_type == "int":
                 self.add_str_to_prompt(f'"{arg}": ')
             else:
+                # self.add_str_to_prompt(f"If the arg in the prompt:'{prompt}' do not have clear bounder, try to extract it properly\nss")
                 self.add_str_to_prompt(f'"{arg}": "')
             arg_val_token = self.constrain_decoder.\
                 generate_args_val(prompt_tokens, arg_type)
-            arg_val_str = self.tokenizer.decode(arg_val_token)
+            arg_val_str = self.decode(arg_val_token)
             # print(f"{arg}: {arg_val_str}")
             if arg_type == 'float' and '.' not in arg_val_str and len(arg_val_str) > 0:
                 self.add_str_to_prompt('.0')
@@ -104,11 +108,11 @@ class PromptGenerator:
             start = time.time()
             self.constrain_decoder.re_initialize_prompt_token()
             initial_token = initial_prompt_toke(
-                prompt, self.fn_names, self.args_list, self.tokenizer)
+                prompt, self.fn_names, self.args_list, self.encode)
             # print(f"prompt: {self.tokenizer.decode(initial_token)}")
             self.constrain_decoder.add_to_prompt(initial_token)
             self.generate(prompt)
             final_token = self.constrain_decoder.get_current_prompt()
-            print(self.tokenizer.decode(final_token[len(initial_token):]))
+            print(self.decode(final_token[len(initial_token):]))
             end = time.time()
             print(f"Token generation time: {(end - start):.3f}s")

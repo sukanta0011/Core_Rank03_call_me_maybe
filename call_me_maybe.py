@@ -9,24 +9,42 @@ from src.tokenizer import Tokenizer
 
 
 def test_llm():
-    # prompts = [
-    #     # "How do I calculate my age difference if I was born in year 1996 "
-    #     # "and now the year is 2025",
-    #     # "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
-    #     # "Replace all vowels in 'Programming is fun' with asterisks",
-    #     # "Hello Sukanta",
-    #     # "what is the sum of -2 and 3?",
-    #     # "what is the total-sum of 2 and 3?",
-    #     # "Greet shrek",
-    #     # "Greet Shrek",
+    prompts = [
+        # "How do I calculate my age difference if I was born in year 1996 "
+        # "and now the year is 2025",
+        # "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+        # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
+        # "Replace all [aeiou] in 'Programming is fun' with *",
 
-    #     "do some random function",
-    # ]
-    prompt_loc = "data/input/function_calling_tests.json"
-    with open(prompt_loc, 'r') as fl:
-        data = json.load(fl)
-    prompts = [key["prompt"] for key in data]
-    print(prompts)
+        # "what is the sum of -2 and 3?",
+        # "what is the total-sum of 2 and 3?",
+
+        "reverse sukanta das",
+        "reverse 'sukanta das'",
+        "'reverse' 'sukanta'",
+        "write sukanta from end to start",
+        "write 'sukanta' from end to start",
+
+        # "Greet sukanta das",
+        # "Greet 'sukanta das'",
+        # "'Greet mr. das'",
+        # "'hi mr. unnamed'",
+        # "'Greet' 'mr.' 'unnamed'",
+        # "Greet ram",
+        # "'Greet' 'Shrek'",
+        # "'hello' 'Shrek'",
+        # "'Greet' 'John'",
+        # "'Welcome' 'John'",
+        # "'Hello' 'John'",
+        # "let us all welcome shreak to the party"
+
+        # "do some random function",
+    ]
+    # prompt_loc = "data/input/function_calling_tests.json"
+    # with open(prompt_loc, 'r') as fl:
+    #     data = json.load(fl)
+    # prompts = [key["prompt"] for key in data]
+    # print(prompts)
 
     start = time.time()
     func_tokenizer = Parser()
@@ -34,13 +52,18 @@ def test_llm():
     llm = Small_LLM_Model()
     token_path = llm.get_path_to_vocabulary_json()
     tokenizer = Tokenizer(path=token_path)
+    encode = tokenizer.encode
+    decode = tokenizer.decode
+    # encode = llm._encode
+    # decode = llm._decode
+
     mid = time.time()
     print(f"LLM loaded in {(mid - start):.3f}s")
     path = "data/input/functions_definition.json"
     allowed_words = func_tokenizer.load_json(path)
     # print(allowed_words)
     # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
-    allowed_tokens = func_tokenizer.tokenize_json_using_custom_tokenizer(llm, tokenizer)
+    allowed_tokens = func_tokenizer.tokenize_json_using_custom_tokenizer(encode)
     # print(allowed_tokens)
 
     # print(f"Arg name: {allowed_words['args_names']}")
@@ -48,7 +71,7 @@ def test_llm():
                                        allowed_words['args_names'],
                                        allowed_words['fn_name'],
                                        allowed_words['args_types'],
-                                       tokenizer)
+                                       encode, decode)
     prompt_generator.generate_for_all_prompts(prompts)
     end = time.time()
     print(f"function generation time {(end - mid):.3f}s")
