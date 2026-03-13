@@ -1,9 +1,27 @@
 import json
-# from abc import ABC, abstractmethod
-# from pydantic import BaseModel
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import List, Tuple
 from typing import Dict, Callable
 from src.helper_functions import tokenize_string, split_word
 from src.tokenizer import Tokenizer
+
+
+class Flags(StrEnum):
+    INPUT: str= "--input"
+    FUNCTION: str = "--functions_definition"
+    OUTPUT: str = "--output"
+
+@dataclass
+class ResourcePath:
+    function_def: str = "data/input/functions_definition.json"
+    inputs: str = "data/input/function_calling_tests.json"
+    outputs: str = "data/output/results.json"
+
+
+def parse_cli_arguments(args: List[str]) -> Tuple[str, str, str]:
+    for arg in args:
+        print(arg)
 
 
 class Parser:
@@ -45,23 +63,6 @@ class Parser:
         # print(self.data_token)
         return self.data_token
 
-    def tokenize_json_using_llm(self, llm) -> Dict:
-        for k, v in self.data_str.items():
-            if k not in self.data_token.keys():
-                self.data_token[k] = []
-            for word in v:
-                if isinstance(word, str):
-                    tokens = tokenize_string(word, llm)
-                    self.data_token[k].append(tokens)
-                elif isinstance(word, list):
-                    # for token in tokens[0]:
-                    tokens = []
-                    for sub_word in word:
-                        token = tokenize_string(sub_word, llm)
-                        tokens.append(token[0])
-                self.data_token[k].append(tokens)
-        # print(self.data_token)
-        return self.data_token
 
     def tokenize_json_manually(self, llm) -> Dict:
         for k, v in self.data_str.items():
