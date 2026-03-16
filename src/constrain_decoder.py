@@ -7,6 +7,13 @@ from src.token_generator import TokenGenerator
 from src.helper_functions import initial_prompt_toke
 from src.parser import FnInfo, Prompts
 
+REGEX_LIBRARY = {
+            "digits": r"\d+",
+            "vowels": "[aeiouAEIOU]",
+            "asterisks": r"\*",
+            "hashes": r"\#",
+            "lowercase": "[a-z]+"
+        }
 
 class Output(BaseModel):
     prompt: str = ""
@@ -33,20 +40,12 @@ class ConstrainDecoder:
         token_patch = self.encode(str_patch)
         return self.tkn_generator.add_to_prompt(token_patch)
 
-    def modify_prompt_for_regex(self, prompt: str) -> str:
-        patterns = {
-            "vowels": "[aeiouAEIOU]",
-            "consonants": "[^aeiouAEIOU]",
-            "asterisks": "*",
-            "digits": "r'\\d+'"
-        }
-
-        # for key, val in patterns.items():
-        #     prompt = prompt.replace(key, val)
-        # print(f"Prompt: {prompt}")
-        prompt += f"\nExample of regex:\n {patterns}\n"
-        # prompt += "Important: When extracting a regex for digits, use \d+. For vowels, use [aeiou]."
-        return prompt
+    def substitute_regex(self, raw_output: str) -> str:
+        clean_output = raw_output.strip().lower()
+        for key, val in REGEX_LIBRARY.items():
+            if clean_output in key:
+                return val
+        return raw_output
 
     def generate(self, prompt: str, out: Output) -> None:
         starting_prompt = '{\n"Prompt": ' + '"' + prompt + '"'
@@ -67,16 +66,19 @@ class ConstrainDecoder:
 
     def get_all_allowed_token(self, prompt: str) -> List[int]:
         tokens = self.encode(prompt)
-        words = prompt.split(" ")
+        words = re.findall(r"\'[^\']+\'|\b\w+\b", prompt)
+        # print(words)
         for word in words:
             tokens.extend(self.encode(word))
-        return tokens
+        unique_tokens = list(set(tokens))
+        # print([self.decode(tkn) for tkn in unique_tokens])
+        return unique_tokens
 
     def handle_arguments(self, prompt: str,
                          fn: FnInfo, out: Output) -> None:
         original_prompt = prompt
-        if "regex" in fn.fn_name:
-            prompt = self.modify_prompt_for_regex(prompt)
+        # if "regex" in fn.fn_name:
+        #     prompt = self.modify_prompt_for_regex(prompt)
             # print(prompt)
         # if "numbers" in final_fn_name:
         #     prompt += "\nExample: add -2 and 3, a: -2, b: 3"
@@ -94,28 +96,46 @@ class ConstrainDecoder:
                 # self.add_str_to_prompt(f"If the arg in the prompt:'{prompt}' do not have clear bounder, try to extract it properly\nss")
                 self.add_str_to_prompt(f'"{arg}": "')
             arg_val_token, prompt_tokens = self.tkn_generator.\
-                generate_args_val(prompt_tokens, arg_type,original_prompt)
+                generate_args_val(prompt_tokens, arg_type,original_prompt, 1)
             arg_val_str = self.decode(arg_val_token)
-
-            # Store th arg value
-            if arg_type == 'int':
-                try:
-                    out.fn_args[arg] = int(arg_val_str)
-                except ValueError:
-                    out.fn_args[arg] = ""
-                    print(f"{arg} has not numeric value: {arg_val_str}")
-            elif arg_type == 'float':
-                try:
-                    out.fn_args[arg] = float(arg_val_str)
-                except ValueError:
-                    out.fn_args[arg] = ""
-                    print(f"{arg} has not numeric value: {arg_val_str}")
-            else:
-                str_in_args = re.findall("[^\",}]", arg_val_str)
-                out.fn_args[arg] = "".join(str_in_args).strip()
+            self._store_arguments(arg, arg_val_str, arg_type, out)
 
             if i < total_args - 1:
                 self.add_str_to_prompt(", ")
+    
+    def _store_arguments(self, key: str, val: Any, arg_type: Any, out: Output) -> None:
+        if arg_type == 'int':
+            try:
+                out.fn_args[key] = int(val)
+            except ValueError:
+                out.fn_args[key] = ""
+                print(f"{key} has not numeric value: {val}")
+        elif arg_type == 'float':
+            try:
+                out.fn_args[key] = float(val)
+            except ValueError:
+                out.fn_args[key] = ""
+                print(f"{key} has not numeric value: {val}")
+        elif arg_type == 'bool':
+            if 'right' in val.lower() or 'true' in val.lower():
+                out.fn_args[key] = True
+            elif 'wrong' in val.lower() or 'false' in val.lower():
+                out.fn_args[key] = False
+        else:
+            str_in_args = re.findall("[^\",}]", val)
+            clean_val = "".join(str_in_args).strip()
+            if key == "regex":
+                regex_prompt = f'\nWhat is the regular expression that we can use to replace "{clean_val}" in a sentence?\n Answer: "'
+                self.add_str_to_prompt(regex_prompt)
+                # print(regex_prompt)
+                self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
+                clean_val = self.substitute_regex(clean_val)
+            if key == "replacement":
+                regex_prompt = f'\nWhat is the symbol of expression "{clean_val}"?\n Answer: "'
+                self.add_str_to_prompt(regex_prompt)
+                # print(regex_prompt)
+                self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
+            out.fn_args[key] = clean_val
 
     def generate_for_all_prompts(self, prompts: List[Prompts]) -> List[Output]:
         for prompt in prompts:

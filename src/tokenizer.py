@@ -4,7 +4,7 @@ from typing import Dict, List
 # from memory_profiler import profile
 
 
-class Tokenizer():
+class Tokenizer:
     def __init__(self, path: str) -> None:
         self.path: str = path
         self.__decoder_list: List[str] = []

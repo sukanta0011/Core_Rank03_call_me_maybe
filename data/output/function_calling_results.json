@@ -1,14 +1,5 @@
 [
     {
-        "prompt": "Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
-        "fn_name": "fn_substitute_string_with_regex",
-        "fn_args": {
-            "source_string": "Hello 34 I'm 233 years old",
-            "regex": "34",
-            "replacement": "NUMBERS}"
-        }
-    },
-    {
         "prompt": "Replace all vowels in 'Programming is fun' with asterisks",
         "fn_name": "fn_substitute_string_with_regex",
         "fn_args": {
@@ -23,53 +14,7 @@
         "fn_args": {
             "source_string": "Programming is fun",
             "regex": "consonants",
-            "replacement": "hash}"
-        }
-    },
-    {
-        "prompt": "replace all a in the word hella warld with o",
-        "fn_name": "fn_substitute_string_with_regex",
-        "fn_args": {
-            "source_string": "hella warld",
-            "regex": "hello",
-            "replacement": "o}"
-        }
-    },
-    {
-        "prompt": "replace all 'a' in the word 'hella warld' with 'o'",
-        "fn_name": "fn_substitute_string_with_regex",
-        "fn_args": {
-            "source_string": "hella warld",
-            "regex": "a",
-            "replacement": "o}"
-        }
-    },
-    {
-        "prompt": "Greet sukanta das",
-        "fn_name": "fn_greet",
-        "fn_args": {
-            "name": "sukanta"
-        }
-    },
-    {
-        "prompt": "Greet mr. das",
-        "fn_name": "fn_greet",
-        "fn_args": {
-            "name": "mr."
-        }
-    },
-    {
-        "prompt": "hi mr. unnamed",
-        "fn_name": "fn_greet",
-        "fn_args": {
-            "name": "john"
-        }
-    },
-    {
-        "prompt": "Greet Shrek",
-        "fn_name": "fn_greet",
-        "fn_args": {
-            "name": "Shrek"
+            "replacement": "hash"
         }
     }
 ]

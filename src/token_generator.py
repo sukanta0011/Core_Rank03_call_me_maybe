@@ -66,13 +66,16 @@ class TokenGenerator:
         return None
 
     def generate_args_val(self, allowed_tokens: List[int],
-                          arg_type: str, prompt: str) -> Tuple[List, List]:
+                          arg_type: str, prompt: str, soft_bias: int) -> Tuple[List, List]:
         complete_arg_tokens: List[int] = []
         token = float("-inf")
         if arg_type == "float" or arg_type == "int":
             terminating_token = self.encode(',')
         else:
             terminating_token = self.encode('"')
+        if arg_type == 'bool':
+            allowed_tokens.extend(self.encode('True'))
+            allowed_tokens.extend(self.encode('False'))
         # print(f"allowed tokens: {self.tokenizer.decode(allowed_tokens)}")
         allowed_tokens.extend(terminating_token)
         token_counter = 0
@@ -90,10 +93,11 @@ class TokenGenerator:
                     complete_arg_tokens.append(token)
                     self.prompt_tokens.append(token)
             else:
-                token = self.get_next_str_token(logits, set(allowed_tokens), 0)
-                # if token in allowed_tokens:
-                #     allowed_tokens.pop(allowed_tokens.index(token))
+                token = self.get_next_str_token(logits, set(allowed_tokens), soft_bias)
+                if token in allowed_tokens:
+                    allowed_tokens.pop(allowed_tokens.index(token))
                 str_val = self.decode(token)
+                # self.remove_token(token, allowed_tokens)
                 sub_str += str_val
                 matching_word = self.get_matching_word(sub_str, prompt)
                 if matching_word is not None:
@@ -112,6 +116,12 @@ class TokenGenerator:
                     break
 
         return (complete_arg_tokens, allowed_tokens)
+    
+    def remove_token(self, token: int, allowed_token: List[int]) -> List[int]:
+        allowed_token_str = [self.decode(tkn) for tkn in allowed_token]
+        token_str = self.decode(token)[0]
+        new_allowed_token = [sub_str for sub_str in allowed_token_str if sub_str.strip() != token_str]
+        print(new_allowed_token)
 
     def get_next_fn_token(self, logits: List[float],
                           allowed_idx: Set[int]) -> int:
@@ -137,7 +147,7 @@ class TokenGenerator:
         logits_np[mask_idx] += soft_bias
         max_prob_token = int(np.argmax(logits_np))
 
-        # # extract top 10 tokens
+        # extract top 10 tokens
         # sorted_idx  = np.argsort(logits_np)
         # top_ten = sorted_idx[-5:]
         # # top_ten = logits_np[sorted_idx][-10:].tolist()
@@ -172,3 +182,4 @@ class TokenGenerator:
                 # print(f"Matching toke: {token_str}")
                 new_idx.append(token_idx)
         mask[new_idx] += soft_bias
+

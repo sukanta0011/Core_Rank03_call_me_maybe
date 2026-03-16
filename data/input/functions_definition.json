@@ -12,6 +12,18 @@
     "return_type": "float"
   },
   {
+    "fn_name": "fn_print_statement",
+    "args_names": [
+      "msg",
+      "validity"
+    ],
+    "args_types": {
+      "msg": "str",
+      "validity": "bool"
+    },
+    "return_type": "None"
+  },
+  {
     "fn_name": "fn_do_something",
     "args_names": [
     ],

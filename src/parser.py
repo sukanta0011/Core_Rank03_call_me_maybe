@@ -19,8 +19,8 @@ class Flags(StrEnum):
 @dataclass
 class ResourcePath:
     function_def: str = "data/input/functions_definition.json"
-    # inputs: str = "data/input/function_calling_tests.json"
-    inputs: str = "data/input/test_prompts.json"
+    inputs: str = "data/input/function_calling_tests.json"
+    # inputs: str = "data/input/test_prompts.json"
     outputs: str = "data/output/function_calling_results.json"
 
 
