@@ -38,7 +38,7 @@ run:
 	@if [ ! -d ".$(ENV_NAME)" ]; then \
 		make install;\
 	fi
-	$(ENV) run $(PYTHON) $(MAIN)
+	$(ENV) run $(PYTHON) -m src
 
 debug:
 	@if [ ! -d ".$(ENV_NAME)" ]; then \

@@ -1,14 +1,9 @@
 import json
 import numpy as np
 from typing import List, Dict, Callable
-from src.tokenizer import Tokenizer
-
-
-def load_json():
-    path = "data/input/functions_definition.json"
-    with open(path, "r") as fl:
-        data = json.load(fl)
-    return data
+from src.parser import Flags, ResourcePath
+from src.parser import FnInfo, Prompts
+from src.custom_errors import CLIParsingError, SourceError
 
 
 def show_toke_distribution(data: List[float], bin_spacing: int):
@@ -18,10 +13,6 @@ def show_toke_distribution(data: List[float], bin_spacing: int):
     counts, _ = np.histogram(data, bins)
     for b, c in zip(bins, counts):
         print(f"{b}: {c}")
-
-
-def show_high_probability_tokens(data: List[float], no: int):
-    pass
 
 
 def char_feq(data: Dict) -> Dict[str, int]:
@@ -47,25 +38,21 @@ def char_feq(data: Dict) -> Dict[str, int]:
 #     tokens = tokenizer.encode(combined_prompt)
 #     return tokens
 
-def initial_prompt_toke(prompt: str, func: List[str],
-                        args: List[str],
+def initial_prompt_toke(prompt: str, functions: List[FnInfo],
                         encode: Callable) -> List[int]:
-    from src.parser import Parser
-    path = "data/input/functions_definition.json"
-    parser = Parser()
-    data_str = parser.load_json(path)
-    pre_prompt = f"Allowed functions: {data_str['fn_name']}, {data_str['args_types']}"
     pre_prompt = ""
-    pre_prompt += "Available function format: fn_name(args: args_type) -> return_type\nAll functions: \n"
-    pre_prompt += "Choose from the following functions to answer user question.\n"
-    for id, fn_name in enumerate(data_str['fn_name']):
-        pre_prompt += f"{fn_name}("
+    pre_prompt += "Available function format: fn_name(args: args_type)"\
+                  "-> return_type\nAll functions: \n"
+    pre_prompt += "Choose from the following functions "\
+                  "to answer user question.\n"
+    for fn in functions:
+        pre_prompt += f"{fn.fn_name}("
         arg_with_types = ""
-        for a, t in zip(data_str['args_names'][id], data_str['args_types'][id]):
+        for a, t in fn.args_types.items():
             arg_with_types += f"{a}: {t}, "
         pre_prompt += f"{arg_with_types[:-2]})"
-        pre_prompt += f" -> {data_str['return_type'][id]}\n"
-        pre_prompt += ""
+        pre_prompt += f" -> {fn.return_type}\n"
+        # pre_prompt += ""
 
     # example1 = "Example 1: 'prompt': 'Greet Sukanta' -> 'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
     # example2 = "Example 2: 'prompt': 'Substitute the r'\d+' in the string 'Hello 34 I'm 233 years old' with NUMBERS' -> 'fn_name': 'fn_substitute_string_with_regex', 'args': {'source_string': 'Hello 34 I'm 233 years old', regex: r'\d+', 'replacement': 'NUMBER'}\n"

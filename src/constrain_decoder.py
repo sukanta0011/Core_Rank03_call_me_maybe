@@ -1,165 +1,138 @@
-from typing import List, Set
-import numpy as np
-from src.helper_functions import is_valid_num
-from src.tokenizer import Tokenizer
+import time
+from typing import List, Callable, Dict, Any
+import re
+from pydantic import BaseModel, Json, Field
+from llm_sdk import Small_LLM_Model
+from src.token_generator import TokenGenerator
+from src.helper_functions import initial_prompt_toke
+from src.parser import FnInfo, Prompts
+
+
+class Output(BaseModel):
+    prompt: str = ""
+    fn_name: str = ""
+    fn_args: Dict[str, Any] = {}
+
+    def get_json_str(self) -> Json:
+        return self.model_dump_json(indent=2)
 
 
 class ConstrainDecoder:
-    def __init__(self, llm, encode, decode) -> None:
-        self.prompt_tokens = []
+    def __init__(self, llm: Small_LLM_Model,
+                 functions: List[FnInfo],
+                 encode: Callable, decode: Callable) -> None:
         self.llm = llm
-        # self.tokenizer = tokenizer
+        self.functions = functions
+        self.tkn_generator = TokenGenerator(llm, encode, decode)
+        self.output: List[Output] = []
         self.encode = encode
         self.decode = decode
 
-    def get_current_prompt(self) -> List[int]:
-        return self.prompt_tokens
+    def add_str_to_prompt(self, string: str) -> int:
+        str_patch = string
+        token_patch = self.encode(str_patch)
+        return self.tkn_generator.add_to_prompt(token_patch)
 
-    def add_to_prompt(self, tokens: List[int]) -> None:
-        # for token in tokens:
-        # print(f"tokens: {self.tokenizer.decode(tokens)}")
-        self.prompt_tokens.extend(tokens)
+    def modify_prompt_for_regex(self, prompt: str) -> str:
+        patterns = {
+            "vowels": "[aeiouAEIOU]",
+            "consonants": "[^aeiouAEIOU]",
+            "asterisks": "*",
+            "digits": "r'\\d+'"
+        }
 
-    def re_initialize_prompt_token(self):
-        self.prompt_tokens = []
+        # for key, val in patterns.items():
+        #     prompt = prompt.replace(key, val)
+        # print(f"Prompt: {prompt}")
+        prompt += f"\nExample of regex:\n {patterns}\n"
+        # prompt += "Important: When extracting a regex for digits, use \d+. For vowels, use [aeiou]."
+        return prompt
 
-    def generate_function_name(self, allowed_token: List[List[int]]) -> List:
-        complete_fn_tokens = []
-        token = float("-inf")
-        terminating_token = self.encode('"')
-        # print(f"prompt: {self.tokenizer.decode(self.prompt_tokens)}")
+    def generate(self, prompt: str, out: Output) -> None:
+        starting_prompt = '{\n"Prompt": ' + '"' + prompt + '"'
+        self.add_str_to_prompt(starting_prompt)
 
-        while token != terminating_token[0] and len(complete_fn_tokens) < 20:
-            # print(llm._decode(complete_fn_tokens))
-            logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
-            next_allowed_tokens = set()
-            complete_fn_len = len(complete_fn_tokens)
-            for fn in allowed_token:
-                if len(fn) > complete_fn_len:
-                    next_allowed_tokens.add(fn[complete_fn_len])
-                else:
-                    next_allowed_tokens.add(terminating_token[0])
-                # If two function shares common name upto some extent,
-                # this will create problem, need to handle it
-                # elif self.list_compare(fn, complete_fn_tokens):
-                #     return complete_fn_tokens
+        self.add_str_to_prompt(',\n"fn_name": "')
+        # print(f"prompt: {self.tokenizer.decode(self.constrain_decoder.prompt_tokens)}")
+        final_fn = self.tkn_generator.\
+            generate_function_name(self.functions)
 
-            # print(f"allowed token: {self.tokenizer.decode(list(next_allowed_tokens))}")
-            # print(f"selected token: {self.tokenizer.decode(complete_fn_tokens)}")
-            # print(f"Allowed token: {next_allowed_tokens}")
-            token = self.get_next_fn_token(logits, next_allowed_tokens)
-            complete_fn_tokens.append(token)
-            self.prompt_tokens.append(token)
-            # print(f"toke: {token}, terminating_token: {terminating_token}")
-            # if token == terminating_token[0]:
-            #     print("Terminating token used, generation complete.")
-                # return complete_fn_tokens
-        return complete_fn_tokens
+        final_fn_name = self.decode(final_fn[: -1])
+        # self.tkn_generator.slice_prompt_tokens(0, before_fn_pos)
+        for fn in self.functions:
+            if final_fn_name == fn.fn_name:
+                out.fn_name = final_fn_name
+                self.handle_arguments(prompt, fn, out)
+        self.add_str_to_prompt("},\n},")
 
-    def generate_args_val(self, allowed_tokens: List[int],
-                          arg_type: str) -> List:
-        complete_arg_tokens = []
-        token = float("-inf")
-        if arg_type == "float" or arg_type == "int":
-            terminating_token = self.encode(',')
-        else:
-            terminating_token = self.encode('"')
-        # print(f"allowed tokens: {self.tokenizer.decode(allowed_tokens)}")
-        allowed_tokens.extend(terminating_token)
+    def get_all_allowed_token(self, prompt: str) -> List[int]:
+        tokens = self.encode(prompt)
+        words = prompt.split(" ")
+        for word in words:
+            tokens.extend(self.encode(word))
+        return tokens
 
-        while token != terminating_token[0] and len(complete_arg_tokens) < 20:
-            logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
+    def handle_arguments(self, prompt: str,
+                         fn: FnInfo, out: Output) -> None:
+        original_prompt = prompt
+        if "regex" in fn.fn_name:
+            prompt = self.modify_prompt_for_regex(prompt)
+            # print(prompt)
+        # if "numbers" in final_fn_name:
+        #     prompt += "\nExample: add -2 and 3, a: -2, b: 3"
+
+        prompt_tokens = self.get_all_allowed_token(prompt)
+        initial_arg_token = ',\n"args": {'
+        self.add_str_to_prompt(initial_arg_token)
+        total_args = len(fn.args_names)
+
+        for i, arg in enumerate(fn.args_names):
+            arg_type = fn.args_types[arg]
             if arg_type == "float" or arg_type == "int":
-                token = self.get_next_numeric_token(logits, set(allowed_tokens))
-                allowed_tokens.pop(allowed_tokens.index(token))
-                str_val = self.decode(token)
-                str_val = str_val.strip()
-                # token = self.tokenizer.encode(str_val)
-                if is_valid_num(str_val) or str_val == "-":
-                    complete_arg_tokens.append(token)
-                    self.prompt_tokens.append(token)
+                self.add_str_to_prompt(f'"{arg}": ')
             else:
-                token = self.get_next_str_token(logits, set(allowed_tokens), 5)
-                # allowed_tokens.pop(allowed_tokens.index(token))
-                str_val = self.decode(token)
-                # print(f"selected toke: {str_val}")
-                complete_arg_tokens.append(token)
-                self.prompt_tokens.append(token)
-                if '"' in str_val:
-                    break
+                # self.add_str_to_prompt(f"If the arg in the prompt:'{prompt}' do not have clear bounder, try to extract it properly\nss")
+                self.add_str_to_prompt(f'"{arg}": "')
+            arg_val_token, prompt_tokens = self.tkn_generator.\
+                generate_args_val(prompt_tokens, arg_type,original_prompt)
+            arg_val_str = self.decode(arg_val_token)
 
-        return complete_arg_tokens
+            # Store th arg value
+            if arg_type == 'int':
+                try:
+                    out.fn_args[arg] = int(arg_val_str)
+                except ValueError:
+                    out.fn_args[arg] = ""
+                    print(f"{arg} has not numeric value: {arg_val_str}")
+            elif arg_type == 'float':
+                try:
+                    out.fn_args[arg] = float(arg_val_str)
+                except ValueError:
+                    out.fn_args[arg] = ""
+                    print(f"{arg} has not numeric value: {arg_val_str}")
+            else:
+                str_in_args = re.findall("[^\",}]", arg_val_str)
+                out.fn_args[arg] = "".join(str_in_args).strip()
 
-    # def get_next_token(self, logits: List[float],
-    #                    allowed_idx: Set[int]) -> int:
-    #     max_prob = float("-inf")
-    #     max_prob_idx = -1
-    #     # print()
-    #     for token in allowed_idx:
-    #         # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-    #         if logits[token] > max_prob:
-    #             max_prob = logits[token]
-    #             max_prob_idx = token
-    #     # print(f"Selected token {self.tokenizer.decode([max_prob_idx])},"
-    #     #       f" {logits[max_prob_idx]}")
-    #     return max_prob_idx
+            if i < total_args - 1:
+                self.add_str_to_prompt(", ")
 
-    def get_next_fn_token(self, logits: List[float],
-                          allowed_idx: Set[int]) -> int:
-        logits_np = np.array(logits)
-        mask = np.full_like(logits_np, -1e9)
-        allowed_idx = list(allowed_idx)
-        mask[allowed_idx] = 0
-        max_prob_token = int(np.argmax(logits_np + mask))
+    def generate_for_all_prompts(self, prompts: List[Prompts]) -> List[Output]:
+        for prompt in prompts:
+            start = time.time()
 
-        # # print()
-        # tokens_with_prob = ""
-        # for token in allowed_idx:
-        #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-        #     tokens_with_prob += f"{self.tokenizer.decode([token])}({round(logits[token], 2)}),"
-        # tokens_with_prob += f"\033[92mSelected token: {self.tokenizer.decode([max_prob_token])}\033[0m"
-        # print(tokens_with_prob)
-        return max_prob_token
-
-    def get_next_str_token(self, logits: List[float],
-                           allowed_idx: Set[int], soft_bias: int = 5) -> int:
-        logits_np = np.array(logits)
-        allowed_idx = list(allowed_idx)
-        # logits_np[allowed_idx] += soft_bias
-        max_prob_token = int(np.argmax(logits_np))
-
-        # # extract top 10 tokens
-        # sorted_idx  = np.argsort(logits_np)
-        # top_ten = sorted_idx[-5:]
-        # # top_ten = logits_np[sorted_idx][-10:].tolist()
-        # tokens_with_prob = ""
-        # for token in top_ten:
-        #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-        #     tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
-        # tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
-        # print(tokens_with_prob)
-        return max_prob_token
-
-    def get_next_numeric_token(self, logits: List[float],
-                               allowed_idx: Set[int],
-                               soft_bias: int = 5) -> int:
-        logits_np = np.array(logits)
-        mask = np.full_like(logits_np, -1e9)
-        allowed_idx = list(allowed_idx)
-        mask[allowed_idx] = 0
-        self.create_toke_biasing(mask, allowed_idx, "-.", soft_bias)
-        max_prob_token = int(np.argmax(logits_np + mask))
-        return max_prob_token
-
-    def create_toke_biasing(self, mask: np.array, allowed_idx: List[int],
-                            bias_tokens: str,
-                            soft_bias: int = 5) -> None:
-        new_idx: List[int] = []
-        # print(allowed_idx)
-        for token_idx in allowed_idx:
-            token_str = self.decode(token_idx)
-            # print(f"{token_str}: {token_str in bias_tokens}")
-            if token_str.strip() in bias_tokens:
-                # print(f"Matching toke: {token_str}")
-                new_idx.append(token_idx)
-        mask[new_idx] = soft_bias
+            out = Output()
+            out.prompt = prompt.prompt
+            self.tkn_generator.re_initialize_prompt_token()
+            initial_token = initial_prompt_toke(
+                prompt.prompt, self.functions, self.encode)
+            # print(f"prompt: {self.tokenizer.decode(initial_token)}")
+            self.tkn_generator.add_to_prompt(initial_token)
+            self.generate(prompt.prompt, out)
+            final_token = self.tkn_generator.get_prompt()
+            print(self.decode(final_token[len(initial_token):]))
+            self.output.append(out)
+            end = time.time()
+            print("\033[92mToken generation time: "
+                  f"{(end - start):.3f}s\033[0m")
+        return self.output

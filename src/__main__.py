@@ -1,90 +1,86 @@
 import time
-import json
 import sys
-from src.helper_functions import load_json
+# from src.helper_functions import load_json
 # from src.ConstrainDecoder import ConstrainDecoder
-from src.parser import Parser, parse_cli_arguments
-from src.prompt_generator import PromptGenerator
+from typing import List
+from pydantic import TypeAdapter
+from llm_sdk import Small_LLM_Model
+from src.parser import (
+    Parser, ResourcePath)
+from src.constrain_decoder import ConstrainDecoder, Output
 from src.tokenizer import Tokenizer
 
 
 def main() -> None:
-    parse_cli_arguments(sys.argv)
+    try:
+        my_prompts = [
+            # "How do I calculate my age difference if I was born in year 1996 "
+            # "and now the year is 2025",
+            "Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+            # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
+            "Replace all vowels in 'Programming is fun' with asterisks",
+            "Replace consonants in 'Programming is fun' with hash",
+            "replace all a in the word hella warld with o",
+            "replace all 'a' in the word 'hella warld' with 'o'",
 
+            # "what is the sum of -2 and 3?",
+            # "what is the total-sum of 2 and 3?",
 
+            # "reverse sukanta das",
+            # "reverse 'sukanta das'",
+            # "'reverse' 'sukanta'",
+            # "reverse sukanta",
+            # "write sukanta from end to start",
+            # "write 'sukanta' from end to start",
 
-def test_llm():
-    # prompts = [
-    #     # "How do I calculate my age difference if I was born in year 1996 "
-    #     # "and now the year is 2025",
-    #     # "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
-    #     # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
-    #     # "Replace all [aeiou] in 'Programming is fun' with *",
+            "Greet sukanta das",
+            # "Greet 'sukanta das'",
+            "Greet mr. das",
+            "hi mr. unnamed",
+            # "'Greet mr. unnamed",
+            # "Greet ram",
+            "Greet Shrek",
+            # "'hello' 'Shrek'",
+            # "'Greet John'",
+            # "'Welcome John'",
+            # "'Hello' 'John'",
+            # "let us all welcome shreak to the party",
+            # "what is your name? ",
+        ]
 
-    #     # "what is the sum of -2 and 3?",
-    #     # "what is the total-sum of 2 and 3?",
+        start = time.time()
+        llm = Small_LLM_Model()
+        token_path = llm.get_path_to_vocabulary_json()
+        tokenizer = Tokenizer(path=token_path)
+        encode = tokenizer.encode
+        decode = tokenizer.decode
+        # encode = llm._encode
+        # decode = llm._decode
+        mid = time.time()
+        print(f"LLM loaded in {(mid - start):.3f}s")
 
-    #     # "reverse sukanta das",
-    #     # "reverse 'sukanta das'",
-    #     # "'reverse' 'sukanta'",
-    #     # "reverse sukanta",
-    #     # "write sukanta from end to start",
-    #     # "write 'sukanta' from end to start",
+        parser = Parser()
+        Parser.parse_cli_arguments(sys.argv)
+        Parser.validate_resources()
+        functions = parser.load_functions(ResourcePath.function_def, encode)
 
-    #     "Pozdrav Shreka",
-    #     "Greet sukanta das",
-    #     "Greet 'sukanta das'",
-    #     "'Greet mr. das'",
-    #     "'hi mr. unnamed'",
-    #     "'Greet' 'mr.' 'unnamed'",
-    #     "Greet ram",
-    #     "'Greet' 'Shrek'",
-    #     "'hello' 'Shrek'",
-    #     "'Greet' 'John'",
-    #     "'Welcome' 'John'",
-    #     "'Hello' 'John'",
-    #     "let us all welcome shreak to the party"
+        # prompts = parser.load_prompts(ResourcePath.inputs)
+        prompts = parser.load_prompts(my_prompts)
 
-    #     # "do some random function",
-    # ]
-    prompt_loc = "data/input/function_calling_tests.json"
-    with open(prompt_loc, 'r') as fl:
-        data = json.load(fl)
-    prompts = [key["prompt"] for key in data]
-    # print(prompts)
+        prompt_generator = ConstrainDecoder(
+            llm, functions, encode, decode)
+        outputs = prompt_generator.generate_for_all_prompts(prompts)
+        end = time.time()
+        print(f"function generation time {(end - mid):.3f}s")
 
-    start = time.time()
-    func_tokenizer = Parser()
-    from llm_sdk import Small_LLM_Model
-    llm = Small_LLM_Model(device='cpu')
-    token_path = llm.get_path_to_vocabulary_json()
-    tokenizer = Tokenizer(path=token_path)
-    encode = tokenizer.encode
-    decode = tokenizer.decode
-    # encode = llm._encode
-    # decode = llm._decode
+        # Saving the outputs
+        adapter = TypeAdapter(List[Output])
+        json_data = adapter.dump_json(outputs, indent=4).decode('utf-8')
+        with open(ResourcePath.outputs, 'w') as fl:
+            fl.write(json_data)
 
-    mid = time.time()
-    print(f"LLM loaded in {(mid - start):.3f}s")
-    path = "data/input/functions_definition.json"
-    allowed_words = func_tokenizer.load_json(path)
-    # print(allowed_words)
-    # allowed_tokens = func_tokenizer.tokenize_json_manually(llm)
-    allowed_tokens = func_tokenizer.tokenize_json_using_custom_tokenizer(encode)
-    # print(allowed_tokens)
-
-    # print(f"Arg name: {allowed_words['args_names']}")
-    prompt_generator = PromptGenerator(llm, allowed_tokens['fn_name'],
-                                       allowed_words['args_names'],
-                                       allowed_words['fn_name'],
-                                       allowed_words['args_types'],
-                                       encode, decode)
-    prompt_generator.generate_for_all_prompts(prompts)
-    end = time.time()
-    print(f"function generation time {(end - mid):.3f}s")
-    # except Exception as e:
-    #     print(f"Error: {e.__class__}, {e}")
-
+    except Exception as e:
+        print(e)
 
 
 def extract_probability():
@@ -98,4 +94,3 @@ def extract_probability():
 if __name__ == "__main__":
     # test_llm()
     main()
-    
