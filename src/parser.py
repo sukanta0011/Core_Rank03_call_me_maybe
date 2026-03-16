@@ -25,10 +25,11 @@ class ResourcePath:
 
 
 class FnInfo(BaseModel):
-    fn_name: str = Field(min_length=2, alias="fn_name")
-    args_names: List[str] = Field(alias="args_names")
-    args_types: Dict[str, str] = Field(alias="args_types")
-    return_type: str = Field(alias="return_type")
+    fn_name: str = Field(min_length=2, alias="name")
+    fn_definition: str = Field(alias="description")
+    # args_names: List[str] = Field(alias="parameters")
+    args_types: Dict[str, str] = Field(alias="parameters")
+    return_type: str = Field(alias="returns")
     fn_name_token: List[int]
 
     @model_validator(mode='after')
@@ -36,13 +37,6 @@ class FnInfo(BaseModel):
         if not self.fn_name.startswith('fn'):
             raise ValueError(
                 "Function name should start with 'fn")
-        return self
-
-    @model_validator(mode='after')
-    def args_checker(self) -> 'FnInfo':
-        if len(self.args_names) != len(self.args_types):
-            raise ValueError(
-                "args_name and args_types dimensions are not matching")
         return self
 
 
@@ -60,6 +54,7 @@ class Parser():
             data = json.load(fl)
         for info in data:
             info['fn_name_token'] = encode(info['fn_name'])
+            info['parameters'] = {k, v for k, v in info["parameters"].items()}
             self.functions.append(FnInfo.model_validate(info))
 
         return self.functions
