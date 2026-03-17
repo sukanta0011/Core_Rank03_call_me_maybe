@@ -13,7 +13,7 @@ storing the text for efficient look up and use
 
 ## step to use 42 computer
 mkdir -p /goinfre/$USER/uv_cache
-export UV_CACHE_DIR="/goinfre/$USER/uv_cache"
+export UV_CACHE_DIR="/sgoinfre/$USER/uv_cache"
 
 mkdir -p /goinfre/$USER/hf_cache
 export HF_HOME="/goinfre/$USER/huggingface"

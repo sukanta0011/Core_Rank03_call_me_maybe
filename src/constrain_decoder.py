@@ -121,19 +121,19 @@ class ConstrainDecoder:
         else:
             str_in_args = re.findall("[^\",}]", val)
             clean_val = "".join(str_in_args).strip()
-            if key == "regex":
-                self.tkn_generator.set_token_limit(500)
-                # regex_prompt = f"\nCan you justify why have you picked {clean_val} as 'regex'?\nAnswer:"
-                regex_prompt = f'\nIs there any regular expression that we can use to replace "{clean_val}" in a sentence? If yes, Think deeply to generate the regex of {clean_val}.\n Answer: "'
-                self.add_str_to_prompt(regex_prompt)
-                # print(regex_prompt)
-                self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
-                clean_val = self.substitute_regex(clean_val)
-            if key == "replacement":
-                regex_prompt = f'\nWhat is the symbol of expression "{clean_val}"?\n Answer: "'
-                self.add_str_to_prompt(regex_prompt)
-                # print(regex_prompt)
-                self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
+            # if key == "regex":
+            #     self.tkn_generator.set_token_limit(500)
+            #     # regex_prompt = f"\nCan you justify why have you picked {clean_val} as 'regex'?\nAnswer:"
+            #     regex_prompt = f'\nIs there any regular expression that we can use to replace "{clean_val}" in a sentence? If yes, Think deeply to generate the regex of {clean_val}.\n Answer: "'
+            #     self.add_str_to_prompt(regex_prompt)
+            #     # print(regex_prompt)
+            #     self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
+            #     clean_val = self.substitute_regex(clean_val)
+            # if key == "replacement":
+            #     regex_prompt = f'\nWhat is the symbol of expression "{clean_val}"?\n Answer: "'
+            #     self.add_str_to_prompt(regex_prompt)
+            #     # print(regex_prompt)
+            #     self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
             out.fn_args[key] = clean_val
 
     def generate_for_all_prompts(self, prompts: List[Prompts]) -> List[Output]:

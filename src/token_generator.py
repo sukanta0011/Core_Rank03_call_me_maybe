@@ -101,21 +101,21 @@ class TokenGenerator:
                 if token in allowed_tokens:
                     allowed_tokens.pop(allowed_tokens.index(token))
                 str_val = self.decode(token)
-                # self.remove_token(token, allowed_tokens)
-                sub_str += str_val
-                matching_word = self.get_matching_word(sub_str, prompt)
-                if matching_word is not None:
-                    # print(f"Matching word: {matching_word}, sub_str: {sub_str}")
-                    for _ in range(token_counter - 1):
-                        self.prompt_tokens.pop()
-                        complete_arg_tokens.pop()
-                    self.prompt_tokens.extend(self.encode(matching_word))
-                    complete_arg_tokens.extend(self.encode(matching_word))
-                    sub_str = ""
-                    token_counter = 0
-                else:
-                    complete_arg_tokens.append(token)
-                    self.prompt_tokens.append(token)
+                # # self.remove_token(token, allowed_tokens)
+                # sub_str += str_val
+                # matching_word = self.get_matching_word(sub_str, prompt)
+                # if matching_word is not None:
+                #     # print(f"Matching word: {matching_word}, sub_str: {sub_str}")
+                #     for _ in range(token_counter - 1):
+                #         self.prompt_tokens.pop()
+                #         complete_arg_tokens.pop()
+                #     self.prompt_tokens.extend(self.encode(matching_word))
+                #     complete_arg_tokens.extend(self.encode(matching_word))
+                #     sub_str = ""
+                #     token_counter = 0
+                # else:
+                complete_arg_tokens.append(token)
+                self.prompt_tokens.append(token)
                 if '"' in str_val:
                     break
 
@@ -152,15 +152,15 @@ class TokenGenerator:
         max_prob_token = int(np.argmax(logits_np))
 
         # extract top 10 tokens
-        # sorted_idx  = np.argsort(logits_np)
-        # top_ten = sorted_idx[-5:]
-        # # top_ten = logits_np[sorted_idx][-10:].tolist()
-        # tokens_with_prob = ""
-        # for token in top_ten:
-        #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-        #     tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
-        # tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
-        # print(tokens_with_prob)
+        sorted_idx  = np.argsort(logits_np)
+        top_ten = sorted_idx[-5:]
+        # top_ten = logits_np[sorted_idx][-10:].tolist()
+        tokens_with_prob = ""
+        for token in top_ten:
+            # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+            tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
+        tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
+        print(tokens_with_prob)
         return max_prob_token
 
     def get_next_numeric_token(self, logits: List[float],
