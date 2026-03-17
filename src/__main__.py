@@ -16,17 +16,20 @@ def main() -> None:
         my_prompts = [
             # "How do I calculate my age difference if I was born in year 1996 "
             # "and now the year is 2025",
-            # "Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+            "Replace all the 'alphabet' in 'hi1245 assuu152' with digit 0",
+            "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
+            "Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
             # "Substitute all alphabet between a-z in the string 'Hello 34 I'm 233 years old' with digits",
             # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
             "Replace all vowels in 'Programming is fun' with asterisks",
             "Replace consonants in 'Programming is fun' with hash",
+            # "Replace spaces in 'Programming is fun' with underscore",
             # "replace the user in email id user@email.com with user123",
             # "replace the 'user' in email id 'user@email.com' with 'user123'",
             # "replace all a in the word hella warld with o",
             # "replace all 'a' in the word 'hella warld' with 'o'",
 
-            # "what is the sum of -2 and 3?",
+            "what is the sum of -2 and 3?",
             # "what is the total-sum of 2 and 3?",
 
             # "reverse sukanta das",
@@ -42,7 +45,8 @@ def main() -> None:
             # "hi mr. unnamed",
             # "'Greet mr. unnamed",
             # "Greet ram",
-            # "Greet Shrek 1234",
+            "Greet shrek",
+            "Greet Shrek",
             # "Greet 'Shrek 1234'",
             # "'hello' 'Shrek'",
             # "'Greet John'",
@@ -62,7 +66,7 @@ def main() -> None:
 
         start = time.time()
         llm = Small_LLM_Model(device='cpu')
-        token_path = llm.get_path_to_vocabulary_json()
+        token_path = llm.get_path_to_vocab_file()
         tokenizer = Tokenizer(path=token_path)
         encode = tokenizer.encode
         decode = tokenizer.decode
@@ -75,6 +79,9 @@ def main() -> None:
         Parser.parse_cli_arguments(sys.argv)
         Parser.validate_resources()
         functions = parser.load_functions(ResourcePath.function_def, encode)
+        # print(functions)
+        # for fun in functions:
+        #     print(fun.fn_name)
 
         # prompts = parser.load_prompts(ResourcePath.inputs)
         prompts = parser.load_prompts(my_prompts)

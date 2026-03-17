@@ -1,0 +1,69 @@
+[
+    {
+        "prompt": "Replace all the 'alphabet' in 'hi1245 assuu152' with digit 0",
+        "fn_name": "fn_substitute_string_with_regex",
+        "fn_args": {
+            "source_string": "hi1245 assuu152",
+            "regex": "alphabet",
+            "replacement": "0"
+        }
+    },
+    {
+        "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
+        "fn_name": "fn_substitute_string_with_regex",
+        "fn_args": {
+            "source_string": "Hello 34 I'm 233 years old",
+            "regex": "34",
+            "replacement": "NUMBERS"
+        }
+    },
+    {
+        "prompt": "Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+        "fn_name": "fn_substitute_string_with_regex",
+        "fn_args": {
+            "source_string": "Hello 34 I'm 233 years old",
+            "regex": "34",
+            "replacement": "NUMBERS"
+        }
+    },
+    {
+        "prompt": "Replace all vowels in 'Programming is fun' with asterisks",
+        "fn_name": "fn_substitute_string_with_regex",
+        "fn_args": {
+            "source_string": "Programming is fun",
+            "regex": "aeiou",
+            "replacement": "asterisks"
+        }
+    },
+    {
+        "prompt": "Replace consonants in 'Programming is fun' with hash",
+        "fn_name": "fn_substitute_string_with_regex",
+        "fn_args": {
+            "source_string": "Programming is fun",
+            "regex": "consonants",
+            "replacement": "hash"
+        }
+    },
+    {
+        "prompt": "what is the sum of -2 and 3?",
+        "fn_name": "fn_add_numbers",
+        "fn_args": {
+            "a": -2,
+            "b": 3
+        }
+    },
+    {
+        "prompt": "Greet shrek",
+        "fn_name": "fn_greet",
+        "fn_args": {
+            "name": "name"
+        }
+    },
+    {
+        "prompt": "Greet Shrek",
+        "fn_name": "fn_greet",
+        "fn_args": {
+            "name": "Shrek"
+        }
+    }
+]

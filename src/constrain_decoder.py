@@ -90,29 +90,26 @@ class ConstrainDecoder:
 
         for i, arg in enumerate(fn.args_names):
             arg_type = fn.args_types[arg]
-            if arg_type == "float" or arg_type == "int":
+            if arg_type == "float" or arg_type == "int" or arg_type == "number":
                 self.add_str_to_prompt(f'"{arg}": ')
             else:
                 # self.add_str_to_prompt(f"If the arg in the prompt:'{prompt}' do not have clear bounder, try to extract it properly\nss")
                 self.add_str_to_prompt(f'"{arg}": "')
             arg_val_token, prompt_tokens = self.tkn_generator.\
-                generate_args_val(prompt_tokens, arg_type,original_prompt, 1)
+                generate_args_val(prompt_tokens, arg_type, original_prompt, 0)
             arg_val_str = self.decode(arg_val_token)
             self._store_arguments(arg, arg_val_str, arg_type, out)
 
             if i < total_args - 1:
                 self.add_str_to_prompt(", ")
-    
+
     def _store_arguments(self, key: str, val: Any, arg_type: Any, out: Output) -> None:
-        if arg_type == 'int':
+        if arg_type == 'number':
             try:
-                out.fn_args[key] = int(val)
-            except ValueError:
-                out.fn_args[key] = ""
-                print(f"{key} has not numeric value: {val}")
-        elif arg_type == 'float':
-            try:
-                out.fn_args[key] = float(val)
+                if "." in val:
+                    out.fn_args[key] = float(val)
+                else:
+                    out.fn_args[key] = int(val)
             except ValueError:
                 out.fn_args[key] = ""
                 print(f"{key} has not numeric value: {val}")
@@ -125,7 +122,9 @@ class ConstrainDecoder:
             str_in_args = re.findall("[^\",}]", val)
             clean_val = "".join(str_in_args).strip()
             if key == "regex":
-                regex_prompt = f'\nWhat is the regular expression that we can use to replace "{clean_val}" in a sentence?\n Answer: "'
+                self.tkn_generator.set_token_limit(500)
+                # regex_prompt = f"\nCan you justify why have you picked {clean_val} as 'regex'?\nAnswer:"
+                regex_prompt = f'\nIs there any regular expression that we can use to replace "{clean_val}" in a sentence? If yes, Think deeply to generate the regex of {clean_val}.\n Answer: "'
                 self.add_str_to_prompt(regex_prompt)
                 # print(regex_prompt)
                 self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)

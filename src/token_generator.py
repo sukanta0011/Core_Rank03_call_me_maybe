@@ -7,14 +7,18 @@ from src.parser import FnInfo
 
 class TokenGenerator:
     def __init__(self, llm, encode: Callable,
-                 decode: Callable) -> None:
+                 decode: Callable, token_limit: int = 20) -> None:
         self.prompt_tokens: List[int] = []
         self.llm = llm
         self.encode = encode
         self.decode = decode
+        self.tkn_limits = token_limit
 
     def get_prompt(self) -> List[int]:
         return self.prompt_tokens
+
+    def set_token_limit(self, limit: int) -> None:
+        self.tkn_limits = limit
 
     def slice_prompt_tokens(self, start: int, end: int) -> None:
         self.prompt_tokens = self.prompt_tokens[start: end]
@@ -32,7 +36,7 @@ class TokenGenerator:
         terminating_token = self.encode('"')
         # print(f"prompt: {self.tokenizer.decode(self.prompt_tokens)}")
 
-        while token != terminating_token[0] and len(complete_fn_tokens) < 20:
+        while token != terminating_token[0] and len(complete_fn_tokens) < self.tkn_limits:
             # print(llm._decode(complete_fn_tokens))
             logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
             next_allowed_tokens = set()
@@ -69,7 +73,7 @@ class TokenGenerator:
                           arg_type: str, prompt: str, soft_bias: int) -> Tuple[List, List]:
         complete_arg_tokens: List[int] = []
         token = float("-inf")
-        if arg_type == "float" or arg_type == "int":
+        if arg_type == "float" or arg_type == "int" or arg_type == "number":
             terminating_token = self.encode(',')
         else:
             terminating_token = self.encode('"')
@@ -80,11 +84,11 @@ class TokenGenerator:
         allowed_tokens.extend(terminating_token)
         token_counter = 0
         sub_str = ""
-        while token != terminating_token[0] and len(complete_arg_tokens) < 20:
+        while token != terminating_token[0] and len(complete_arg_tokens) < self.tkn_limits:
             logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
             token_counter += 1
-            if arg_type == "float" or arg_type == "int":
-                token = self.get_next_numeric_token(logits, set(allowed_tokens))
+            if arg_type == "float" or arg_type == "int" or arg_type == "number":
+                token = self.get_next_numeric_token(logits, set(allowed_tokens), 5)
                 allowed_tokens.pop(allowed_tokens.index(token))
                 str_val = self.decode(token)
                 str_val = str_val.strip()
@@ -116,7 +120,7 @@ class TokenGenerator:
                     break
 
         return (complete_arg_tokens, allowed_tokens)
-    
+
     def remove_token(self, token: int, allowed_token: List[int]) -> List[int]:
         allowed_token_str = [self.decode(tkn) for tkn in allowed_token]
         token_str = self.decode(token)[0]

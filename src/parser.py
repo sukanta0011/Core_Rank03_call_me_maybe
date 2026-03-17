@@ -26,17 +26,59 @@ class ResourcePath:
 
 class FnInfo(BaseModel):
     fn_name: str = Field(min_length=2, alias="name")
-    fn_definition: str = Field(alias="description")
-    # args_names: List[str] = Field(alias="parameters")
-    args_types: Dict[str, str] = Field(alias="parameters")
-    return_type: str = Field(alias="returns")
-    fn_name_token: List[int]
+    description: str = Field(default="", alias="description")
+    parameters: Dict = Field(alias="parameters")
+    returns: Dict = Field(alias="returns")
+    fn_name_token: List[int] = Field(default_factory=list)
+    args_names: List[str] = Field(default_factory=list)
+    args_types: Dict[str, str] = Field(default_factory=dict)
+    return_type: List[str] = Field(default_factory=list)
 
     @model_validator(mode='after')
     def function_name_validator(self) -> 'FnInfo':
         if not self.fn_name.startswith('fn'):
             raise ValueError(
                 "Function name should start with 'fn")
+        return self
+
+    @model_validator(mode='after')
+    def type_validator(self) -> 'FnInfo':
+        valid_types = {"number", "string", "bool"}
+        for arg, val in self.parameters.items():
+            self.args_names.append(arg)
+            if len(val) == 1:
+                arg_type = val.get('type')
+                if arg_type is not None:
+                    if arg_type in valid_types:
+                        self.args_types[arg] = arg_type
+                    else:
+                        raise ValueError(
+                            f"parameter: {arg} has type unknown "
+                            f"'{arg_type}' types."
+                        )
+                else:
+                    raise ValueError(
+                        f"parameter: {arg} has not defined type."
+                    )
+            else:
+                raise ValueError(
+                    f"parameter: {arg} type is missing/ over defined."
+                )
+
+        if len(self.returns) == 1:
+            return_type = self.returns.get('type')
+            if return_type is not None:
+                if return_type in valid_types or return_type == "None":
+                    self.return_type.append(return_type)
+                else:
+                    raise ValueError(
+                        f"Return type '{return_type}' unknown.")
+            else:
+                raise ValueError(
+                    "Return has not defined type.")
+        else:
+            raise ValueError(
+                "'returns' type is missing/ over defined.")
         return self
 
 
@@ -52,9 +94,10 @@ class Parser():
     def load_functions(self, path: str, encode: Callable) -> List[FnInfo]:
         with open(path, "r") as fl:
             data = json.load(fl)
+        # print(data)
         for info in data:
-            info['fn_name_token'] = encode(info['fn_name'])
-            info['parameters'] = {k, v for k, v in info["parameters"].items()}
+            # print(info)
+            info['fn_name_token'] = encode(info['name'])
             self.functions.append(FnInfo.model_validate(info))
 
         return self.functions

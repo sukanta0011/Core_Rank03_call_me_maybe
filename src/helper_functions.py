@@ -54,10 +54,12 @@ def initial_prompt_toke(prompt: str, functions: List[FnInfo],
         pre_prompt += f" -> {fn.return_type}\n"
         # pre_prompt += ""
 
-    # example1 = "Example 1: 'prompt': 'Greet Sukanta' -> 'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
-    # example2 = "Example 2: 'prompt': 'Substitute the r'\d+' in the string 'Hello 34 I'm 233 years old' with NUMBERS' -> 'fn_name': 'fn_substitute_string_with_regex', 'args': {'source_string': 'Hello 34 I'm 233 years old', regex: r'\d+', 'replacement': 'NUMBER'}\n"
+    # example1 = "Example: 'prompt': 'Greet Sukanta' -> 'args': {'name': 'Sukanta'}\n"
+    # example2 = "Example: 'prompt': 'Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with NUMBERS' -> 'args': {'source_string': 'Hello 34 I'm 233 years old', regex: r'\\d', 'replacement': 'NUMBER'}\n"
+    # example3 = "Example: Replace consonants in 'Programming is fun' with hash -> 'args': {'source_string': 'Programming is fun', regex: '^[a|e|i|o|u]', 'replacement': '#'}\n"
     # pre_prompt += example1
     # pre_prompt += example2
+    # pre_prompt += example3
 
     # pre_prompt = ""
     # for fn_name, args in zip(data_str['fn_name'], data_str['args_types']):
