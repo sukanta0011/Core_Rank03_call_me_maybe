@@ -41,48 +41,26 @@ def char_feq(data: Dict) -> Dict[str, int]:
 def initial_prompt_toke(prompt: str, functions: List[FnInfo],
                         encode: Callable) -> List[int]:
     pre_prompt = ""
-    pre_prompt += "Available function format: fn_name(args: args_type)"\
-                  "-> return_type\nAll functions: \n"
-    pre_prompt += "Choose from the following functions "\
-                  "to answer user question.\n"
+    # pre_prompt += "Available function format: fn_name(args: args_type)"\
+    #               "-> return_type\nAll functions: \n"
+    # pre_prompt += "Available functions with description about the function:\n"
     for fn in functions:
-        pre_prompt += f"{fn.fn_name}("
-        arg_with_types = ""
-        for a, t in fn.args_types.items():
-            arg_with_types += f"{a}: {t}, "
-        pre_prompt += f"{arg_with_types[:-2]})"
-        pre_prompt += f" -> {fn.return_type}\n"
-        # pre_prompt += ""
+        pre_prompt += f"{fn.fn_name}: {fn.description}\n"
+        # pre_prompt += f"{fn.fn_name}("
+        # arg_with_types = ""
+        # for a, t in fn.args_types.items():
+        #     arg_with_types += f"{a}: {t}, "
+        # pre_prompt += f"{arg_with_types[:-2]})"
+        # pre_prompt += f" -> {fn.return_type}\n\n"
 
-    # example1 = "Example: 'prompt': 'Greet Sukanta' -> 'args': {'name': 'Sukanta'}\n"
+    pre_prompt += "Example: 'Question': 'Greet Sukanta' -> 'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
+    # pre_prompt += "Example: 'Question': 'sum of -5 and 7?' -> 'fn_name': 'fn_add_numbers', 'args': {'a': -5, 'b': 7}\n"
     # example2 = "Example: 'prompt': 'Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with NUMBERS' -> 'args': {'source_string': 'Hello 34 I'm 233 years old', regex: r'\\d', 'replacement': 'NUMBER'}\n"
     # example3 = "Example: Replace consonants in 'Programming is fun' with hash -> 'args': {'source_string': 'Programming is fun', regex: '^[a|e|i|o|u]', 'replacement': '#'}\n"
-    # pre_prompt += example1
-    # pre_prompt += example2
-    # pre_prompt += example3
 
-    # pre_prompt = ""
-    # for fn_name, args in zip(data_str['fn_name'], data_str['args_types']):
-    #     pre_prompt += f"{fn_name}, args: {args}\n"
     # print(pre_prompt)
-    # json_txt = str(load_json())
-    # pre_prompt = f"Allowed functions: {json_txt}"
-
-    # pre_prompt = f"Allowed name: {','.join(func)}"
-    # pre_prompt += f"arguments: {str(args)}"
-    # print(pre_prompt)
-    # pre_prompt = ""
-
-    # question = f"Question: {prompt}\n"
-    combined_prompt = f"{pre_prompt}\n"
-    # print(f"Initial tokes: {combined_prompt}")
-    tokens = encode(combined_prompt)
-    # print(tokens)
+    tokens = encode(pre_prompt)
     return tokens
-
-
-def tokenize_string(string: str, llm) -> List[int]:
-    return llm._encode(string)
 
 
 def is_valid_num(val: str) -> bool:
@@ -93,43 +71,3 @@ def is_valid_num(val: str) -> bool:
         return True
     except ValueError:
         return False
-
-
-def split_word(string: str) -> List[str]:
-    str_len = len(string)
-    tokens = []
-    i = 0
-    try:
-        while (i < str_len):
-            sub_str = ""
-            if string[i] == "'":
-                sub_str += string[i]
-                i += 1
-                while string[i] != "'" and i < str_len:
-                    sub_str += string[i]
-                    i += 1
-                if i < str_len:
-                    sub_str += string[i]
-                    i += 1
-            elif string[i] == '"':
-                sub_str += string[i]
-                i += 1
-                while string[i] != '"' and i < str_len:
-                    sub_str += string[i]
-                    i += 1
-                if i < str_len:
-                    sub_str += string[i]
-                    i += 1
-            else:
-                while i < str_len and string[i].isalpha():
-                    sub_str += string[i]
-                    i += 1
-            if len(sub_str) > 0:
-                tokens.append(sub_str)
-            else:
-                tokens.append(string[i])
-                i += 1
-        return tokens
-    except IndexError as e:
-        print(f"Index Error: {e}")
-        return tokens

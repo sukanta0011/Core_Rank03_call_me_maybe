@@ -17,8 +17,8 @@ def main() -> None:
             # "How do I calculate my age difference if I was born in year 1996 "
             # "and now the year is 2025",
             # "Replace all the 'alphabet' in 'hi1245 assuu152' with digit 0",
-            "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
-            # "Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
+            # "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
+            # "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
             # "Substitute all alphabet between a-z in the string 'Hello 34 I'm 233 years old' with digits",
             # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
             # "Replace all vowels in 'Programming is fun' with asterisks",
@@ -29,7 +29,7 @@ def main() -> None:
             # "replace all a in the word hella warld with o",
             # "replace all 'a' in the word 'hella warld' with 'o'",
 
-            # "what is the sum of -2 and 3?",
+            "what is the sum of -2 and 3?",
             # "what is the total-sum of 2 and 3?",
 
             # "reverse sukanta das",
@@ -41,7 +41,7 @@ def main() -> None:
 
             # "Greet sukanta das",
             # "Greet 'sukanta das'",
-            # "Greet mr. das",
+            "Greet mr. das",
             # "hi mr. unnamed",
             # "'Greet mr. unnamed",
             # "Greet ram",
@@ -65,7 +65,7 @@ def main() -> None:
         ]
 
         start = time.time()
-        llm = Small_LLM_Model(device='cpu')
+        llm = Small_LLM_Model()
         token_path = llm.get_path_to_vocab_file()
         tokenizer = Tokenizer(path=token_path)
         encode = tokenizer.encode

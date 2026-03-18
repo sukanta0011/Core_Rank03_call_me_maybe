@@ -37,8 +37,12 @@ class TokenGenerator:
         # print(f"prompt: {self.tokenizer.decode(self.prompt_tokens)}")
 
         while token != terminating_token[0] and len(complete_fn_tokens) < self.tkn_limits:
-            # print(llm._decode(complete_fn_tokens))
             logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
+
+            # all_tokens = terminating_token
+            # for tkn in allowed_token:
+            #     all_tokens.extend(tkn.fn_name_token)
+            # next_allowed_tokens = set(all_tokens)
             next_allowed_tokens = set()
             complete_fn_len = len(complete_fn_tokens)
             for tkn in allowed_token:
@@ -46,14 +50,7 @@ class TokenGenerator:
                     next_allowed_tokens.add(tkn.fn_name_token[complete_fn_len])
                 else:
                     next_allowed_tokens.add(terminating_token[0])
-                # If two function shares common name upto some extent,
-                # this will create problem, need to handle it
-                # elif self.list_compare(fn, complete_fn_tokens):
-                #     return complete_fn_tokens
 
-            # print(f"allowed token: {self.tokenizer.decode(list(next_allowed_tokens))}")
-            # print(f"selected token: {self.tokenizer.decode(complete_fn_tokens)}")
-            # print(f"Allowed token: {next_allowed_tokens}")
             token = self.get_next_fn_token(logits, next_allowed_tokens)
             complete_fn_tokens.append(token)
             self.prompt_tokens.append(token)
@@ -101,31 +98,34 @@ class TokenGenerator:
                 if token in allowed_tokens:
                     allowed_tokens.pop(allowed_tokens.index(token))
                 str_val = self.decode(token)
-                # # self.remove_token(token, allowed_tokens)
-                # sub_str += str_val
-                # matching_word = self.get_matching_word(sub_str, prompt)
-                # if matching_word is not None:
-                #     # print(f"Matching word: {matching_word}, sub_str: {sub_str}")
-                #     for _ in range(token_counter - 1):
-                #         self.prompt_tokens.pop()
-                #         complete_arg_tokens.pop()
-                #     self.prompt_tokens.extend(self.encode(matching_word))
-                #     complete_arg_tokens.extend(self.encode(matching_word))
-                #     sub_str = ""
-                #     token_counter = 0
-                # else:
-                complete_arg_tokens.append(token)
-                self.prompt_tokens.append(token)
+                # self.remove_token(token, allowed_tokens)
+                sub_str += str_val
+                matching_word = self.get_matching_word(sub_str, prompt)
+                if matching_word is not None:
+                    # print(f"Matching word: {matching_word}, sub_str: {sub_str}")
+                    for _ in range(token_counter - 1):
+                        self.prompt_tokens.pop()
+                        complete_arg_tokens.pop()
+                    self.prompt_tokens.extend(self.encode(matching_word))
+                    complete_arg_tokens.extend(self.encode(matching_word))
+                    sub_str = ""
+                    token_counter = 0
+                else:
+                    complete_arg_tokens.append(token)
+                    self.prompt_tokens.append(token)
                 if '"' in str_val:
+                    idx = str_val.index('"')
+                    self.prompt_tokens.pop()
+                    self.prompt_tokens.extend(self.encode(str_val[:idx + 1]))
                     break
 
         return (complete_arg_tokens, allowed_tokens)
 
-    def remove_token(self, token: int, allowed_token: List[int]) -> List[int]:
-        allowed_token_str = [self.decode(tkn) for tkn in allowed_token]
-        token_str = self.decode(token)[0]
-        new_allowed_token = [sub_str for sub_str in allowed_token_str if sub_str.strip() != token_str]
-        print(new_allowed_token)
+    # def remove_token(self, token: int, allowed_token: List[int]) -> List[int]:
+    #     allowed_token_str = [self.decode(tkn) for tkn in allowed_token]
+    #     token_str = self.decode(token)[0]
+    #     new_allowed_token = [sub_str for sub_str in allowed_token_str if sub_str.strip() != token_str]
+    #     print(new_allowed_token)
 
     def get_next_fn_token(self, logits: List[float],
                           allowed_idx: Set[int]) -> int:
@@ -139,8 +139,8 @@ class TokenGenerator:
         # tokens_with_prob = ""
         # for token in allowed_idx:
         #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-        #     tokens_with_prob += f"{self.tokenizer.decode([token])}({round(logits[token], 2)}),"
-        # tokens_with_prob += f"\033[92mSelected token: {self.tokenizer.decode([max_prob_token])}\033[0m"
+        #     tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
+        # tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
         # print(tokens_with_prob)
         return max_prob_token
 
@@ -151,16 +151,16 @@ class TokenGenerator:
         logits_np[mask_idx] += soft_bias
         max_prob_token = int(np.argmax(logits_np))
 
-        # extract top 10 tokens
-        sorted_idx  = np.argsort(logits_np)
-        top_ten = sorted_idx[-5:]
-        # top_ten = logits_np[sorted_idx][-10:].tolist()
-        tokens_with_prob = ""
-        for token in top_ten:
-            # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
-            tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
-        tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
-        print(tokens_with_prob)
+        # # extract top 10 tokens
+        # sorted_idx  = np.argsort(logits_np)
+        # top_ten = sorted_idx[-5:]
+        # # top_ten = logits_np[sorted_idx][-10:].tolist()
+        # tokens_with_prob = ""
+        # for token in top_ten:
+        #     # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+        #     tokens_with_prob += f"{self.decode([token])}({round(logits[token], 2)}),"
+        # tokens_with_prob += f"\033[92mSelected token: {self.decode([max_prob_token])}\033[0m"
+        # print(tokens_with_prob)
         return max_prob_token
 
     def get_next_numeric_token(self, logits: List[float],
@@ -186,4 +186,3 @@ class TokenGenerator:
                 # print(f"Matching toke: {token_str}")
                 new_idx.append(token_idx)
         mask[new_idx] += soft_bias
-

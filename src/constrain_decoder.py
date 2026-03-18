@@ -48,10 +48,10 @@ class ConstrainDecoder:
         return raw_output
 
     def generate(self, prompt: str, out: Output) -> None:
-        starting_prompt = '{\n"Prompt": ' + '"' + prompt + '"'
+        starting_prompt = f"Question: '{prompt}',\n"
         self.add_str_to_prompt(starting_prompt)
 
-        self.add_str_to_prompt(',\n"fn_name": "')
+        self.add_str_to_prompt('{"fn_name": "')
         # print(f"prompt: {self.tokenizer.decode(self.constrain_decoder.prompt_tokens)}")
         final_fn = self.tkn_generator.\
             generate_function_name(self.functions)

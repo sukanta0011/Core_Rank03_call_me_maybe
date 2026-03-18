@@ -1,18 +1,24 @@
 [
     {
-        "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
-        "fn_name": "fn_substitute_string_with_regex",
+        "prompt": "what is the sum of -2 and 3?",
+        "fn_name": "fn_add_numbers",
         "fn_args": {
-            "source_string": "Hello 34 I'm 233 years old",
-            "regex": "34",
-            "replacement": "NUMBERS"
+            "a": 2,
+            "b": 3
+        }
+    },
+    {
+        "prompt": "Greet mr. das",
+        "fn_name": "fn_greet",
+        "fn_args": {
+            "name": "mr. das"
         }
     },
     {
         "prompt": "Greet shrek",
         "fn_name": "fn_greet",
         "fn_args": {
-            "name": "name"
+            "name": "shrek"
         }
     }
 ]
