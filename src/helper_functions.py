@@ -43,7 +43,7 @@ def initial_prompt_toke(prompt: str, functions: List[FnInfo],
     pre_prompt = ""
     # pre_prompt += "Available function format: fn_name(args: args_type)"\
     #               "-> return_type\nAll functions: \n"
-    # pre_prompt += "Available functions with description about the function:\n"
+    pre_prompt += "Available functions with description about the function:\n"
     for fn in functions:
         pre_prompt += f"{fn.fn_name}: {fn.description}\n"
         # pre_prompt += f"{fn.fn_name}("
@@ -54,7 +54,7 @@ def initial_prompt_toke(prompt: str, functions: List[FnInfo],
         # pre_prompt += f" -> {fn.return_type}\n\n"
 
     pre_prompt += "Example: 'Question': 'Greet Sukanta' -> 'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
-    # pre_prompt += "Example: 'Question': 'sum of -5 and 7?' -> 'fn_name': 'fn_add_numbers', 'args': {'a': -5, 'b': 7}\n"
+    # pre_prompt += "Example: 'Question': 'sum of -5 and 7.2?' -> 'fn_name': 'fn_add_numbers', 'args': {'a': -5, 'b': 7.2}\n"
     # example2 = "Example: 'prompt': 'Substitute the 'digits' in the string 'Hello 34 I'm 233 years old' with NUMBERS' -> 'args': {'source_string': 'Hello 34 I'm 233 years old', regex: r'\\d', 'replacement': 'NUMBER'}\n"
     # example3 = "Example: Replace consonants in 'Programming is fun' with hash -> 'args': {'source_string': 'Programming is fun', regex: '^[a|e|i|o|u]', 'replacement': '#'}\n"
 
@@ -64,10 +64,8 @@ def initial_prompt_toke(prompt: str, functions: List[FnInfo],
 
 
 def is_valid_num(val: str) -> bool:
-    if val == ".":
-        return True
     try:
-        int(val)
+        float(val)
         return True
     except ValueError:
         return False

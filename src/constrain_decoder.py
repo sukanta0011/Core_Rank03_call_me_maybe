@@ -27,10 +27,11 @@ class Output(BaseModel):
 class ConstrainDecoder:
     def __init__(self, llm: Small_LLM_Model,
                  functions: List[FnInfo],
+                 token_set,
                  encode: Callable, decode: Callable) -> None:
         self.llm = llm
         self.functions = functions
-        self.tkn_generator = TokenGenerator(llm, encode, decode)
+        self.tkn_generator = TokenGenerator(llm, token_set, encode, decode)
         self.output: List[Output] = []
         self.encode = encode
         self.decode = decode
@@ -48,7 +49,7 @@ class ConstrainDecoder:
         return raw_output
 
     def generate(self, prompt: str, out: Output) -> None:
-        starting_prompt = f"Question: '{prompt}',\n"
+        starting_prompt = f'Question: "{prompt}",\n'
         self.add_str_to_prompt(starting_prompt)
 
         self.add_str_to_prompt('{"fn_name": "')
@@ -96,7 +97,7 @@ class ConstrainDecoder:
                 # self.add_str_to_prompt(f"If the arg in the prompt:'{prompt}' do not have clear bounder, try to extract it properly\nss")
                 self.add_str_to_prompt(f'"{arg}": "')
             arg_val_token, prompt_tokens = self.tkn_generator.\
-                generate_args_val(prompt_tokens, arg_type, original_prompt, 0)
+                generate_args_val(prompt_tokens, arg, arg_type, original_prompt, 2)
             arg_val_str = self.decode(arg_val_token)
             self._store_arguments(arg, arg_val_str, arg_type, out)
 
@@ -120,20 +121,16 @@ class ConstrainDecoder:
                 out.fn_args[key] = False
         else:
             str_in_args = re.findall("[^\",}]", val)
-            clean_val = "".join(str_in_args).strip()
-            # if key == "regex":
-            #     self.tkn_generator.set_token_limit(500)
-            #     # regex_prompt = f"\nCan you justify why have you picked {clean_val} as 'regex'?\nAnswer:"
-            #     regex_prompt = f'\nIs there any regular expression that we can use to replace "{clean_val}" in a sentence? If yes, Think deeply to generate the regex of {clean_val}.\n Answer: "'
-            #     self.add_str_to_prompt(regex_prompt)
-            #     # print(regex_prompt)
-            #     self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
-            #     clean_val = self.substitute_regex(clean_val)
+            clean_val = "".join(str_in_args)
+            if len(clean_val) > 0 and len(clean_val.strip()) == 0:
+                clean_val = " "
+            else:
+                clean_val = clean_val.strip()
             # if key == "replacement":
-            #     regex_prompt = f'\nWhat is the symbol of expression "{clean_val}"?\n Answer: "'
-            #     self.add_str_to_prompt(regex_prompt)
+            #     symbol_prompt = f"\nWhat is the symbolic representation of the string '{clean_val}'?\nAnswer: \""
+            #     self.add_str_to_prompt(symbol_prompt)
             #     # print(regex_prompt)
-            #     self.tkn_generator.generate_args_val([], 'str', regex_prompt, 0)
+            #     self.tkn_generator.generate_args_val([], key, val, symbol_prompt, 0)
             out.fn_args[key] = clean_val
 
     def generate_for_all_prompts(self, prompts: List[Prompts]) -> List[Output]:

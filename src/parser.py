@@ -20,8 +20,12 @@ class Flags(StrEnum):
 class ResourcePath:
     function_def: str = "data/input/functions_definition.json"
     inputs: str = "data/input/function_calling_tests.json"
-    # inputs: str = "data/input/test_prompts.json"
     outputs: str = "data/output/function_calling_results.json"
+
+    #test paths
+    # function_def: str = "data/input/test_functions.json"
+    # inputs: str = "data/input/test_prompt.json"
+    # outputs: str = "data/output/test_results.json"
 
 
 class FnInfo(BaseModel):

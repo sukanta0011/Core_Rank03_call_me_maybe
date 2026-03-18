@@ -41,6 +41,9 @@ class Tokenizer:
             if len(str) > max_len:
                 max_len = len(str)
         return max_len
+    
+    def get_all_tokes(self) -> List[str]:
+        return self.__decoder_list
 
     def encode(self, string: str) -> List[int]:
         # print(f"Received string: {string}")
