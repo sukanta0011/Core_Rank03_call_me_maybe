@@ -1,7 +1,7 @@
 import time
 from typing import List, Callable, Dict, Any
 import re
-from pydantic import BaseModel, Json, Field
+from pydantic import BaseModel, Json
 from llm_sdk import Small_LLM_Model
 from src.token_generator import TokenGenerator
 from src.helper_functions import initial_prompt_toke
@@ -15,6 +15,7 @@ REGEX_LIBRARY = {
             "lowercase": "[a-z]+"
         }
 
+
 class Output(BaseModel):
     prompt: str = ""
     fn_name: str = ""
@@ -27,7 +28,7 @@ class Output(BaseModel):
 class ConstrainDecoder:
     def __init__(self, llm: Small_LLM_Model,
                  functions: List[FnInfo],
-                 token_set,
+                 token_set: List[str],
                  encode: Callable, decode: Callable) -> None:
         self.llm = llm
         self.functions = functions
@@ -53,7 +54,8 @@ class ConstrainDecoder:
         self.add_str_to_prompt(starting_prompt)
 
         self.add_str_to_prompt('{"fn_name": "')
-        # print(f"prompt: {self.tokenizer.decode(self.constrain_decoder.prompt_tokens)}")
+        # print(f"prompt: {self.tokenizer.decode(
+        #     self.constrain_decoder.prompt_tokens)}")
         final_fn = self.tkn_generator.\
             generate_function_name(self.functions)
 
@@ -91,20 +93,22 @@ class ConstrainDecoder:
 
         for i, arg in enumerate(fn.args_names):
             arg_type = fn.args_types[arg]
-            if arg_type == "float" or arg_type == "int" or arg_type == "number":
+            if (arg_type == "float" or arg_type == "int" or
+               arg_type == "number"):
                 self.add_str_to_prompt(f'"{arg}": ')
             else:
-                # self.add_str_to_prompt(f"If the arg in the prompt:'{prompt}' do not have clear bounder, try to extract it properly\nss")
                 self.add_str_to_prompt(f'"{arg}": "')
             arg_val_token, prompt_tokens = self.tkn_generator.\
-                generate_args_val(prompt_tokens, arg, arg_type, original_prompt, 2)
+                generate_args_val(
+                    prompt_tokens, arg, arg_type, original_prompt, 2)
             arg_val_str = self.decode(arg_val_token)
             self._store_arguments(arg, arg_val_str, arg_type, out)
 
             if i < total_args - 1:
                 self.add_str_to_prompt(", ")
 
-    def _store_arguments(self, key: str, val: Any, arg_type: Any, out: Output) -> None:
+    def _store_arguments(self, key: str, val: Any,
+                         arg_type: Any, out: Output) -> None:
         if arg_type == 'number':
             try:
                 if "." in val:
@@ -127,10 +131,13 @@ class ConstrainDecoder:
             else:
                 clean_val = clean_val.strip()
             # if key == "replacement":
-            #     symbol_prompt = f"\nWhat is the symbolic representation of the string '{clean_val}'?\nAnswer: \""
+            #     symbol_prompt = (
+            #         "\nWhat is the symbolic representation of"
+            #         f" the string '{clean_val}'?\nAnswer: \"")
             #     self.add_str_to_prompt(symbol_prompt)
             #     # print(regex_prompt)
-            #     self.tkn_generator.generate_args_val([], key, val, symbol_prompt, 0)
+            #     self.tkn_generator.generate_args_val(
+            #         [], key, val, symbol_prompt, 0)
             out.fn_args[key] = clean_val
 
     def generate_for_all_prompts(self, prompts: List[Prompts]) -> List[Output]:

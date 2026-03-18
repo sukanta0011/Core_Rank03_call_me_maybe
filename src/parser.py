@@ -15,7 +15,6 @@ class Flags(StrEnum):
     FUNCTION: str = "--functions_definition"
     OUTPUT: str = "--output"
 
-
 @dataclass
 class ResourcePath:
     function_def: str = "data/input/functions_definition.json"
@@ -98,7 +97,6 @@ class Parser():
     def load_functions(self, path: str, encode: Callable) -> List[FnInfo]:
         with open(path, "r") as fl:
             data = json.load(fl)
-        # print(data)
         for info in data:
             # print(info)
             info['fn_name_token'] = encode(info['name'])
@@ -123,46 +121,6 @@ class Parser():
         for info in args:
             self.prompts.append(Prompts(prompt=info))
         return self.prompts
-
-    # def tokenize_json_using_custom_tokenizer(self, encode: Callable) -> Dict:
-    #     for k, v in self.data_str.items():
-    #         if k not in self.data_token.keys():
-    #             self.data_token[k] = []
-    #         for word in v:
-    #             if isinstance(word, str):
-    #                 tokens = encode(word)
-    #                 self.data_token[k].append(tokens)
-    #             elif isinstance(word, list):
-    #                 # for token in tokens[0]:
-    #                 tokens = []
-    #                 for sub_word in word:
-    #                     token = encode(sub_word)
-    #                     tokens.append(token)
-    #             self.data_token[k].append(tokens)
-    #     # print(self.data_token)
-    #     return self.data_token
-
-    # def tokenize_json_manually(self, llm) -> Dict:
-    #     for k, v in self.data_str.items():
-    #         if k not in self.data_token_by_word.keys():
-    #             self.data_token_by_word[k] = []
-    #         for word in v:
-    #             tokens = []
-    #             sub_words = split_word(word)
-    #             for sub_word in sub_words:
-    #                 # print(f"Sub word: {sub_word}")
-    #                 try:
-    #                     token = tokenize_string(word, llm)
-    #                     # print(f"Tokens: {token[0]}")
-    #                     for sub_token in token:
-    #                         tokens.append(sub_token)
-    #                 except Exception as e:
-    #                     print(f"{e}")
-    #             self.data_token_by_word[k].append(tokens)
-
-    #                 # self.data_token_by_word[k].append(token)
-    #     # print(self.data_token)
-    #     return self.data_token_by_word
 
     @staticmethod
     def validate_resources() -> None:

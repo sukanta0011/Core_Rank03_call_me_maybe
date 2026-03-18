@@ -15,6 +15,16 @@
     }
   },
   {
+    "name": "fn_add_three_numbers",
+    "description": "Add three numbers together and return their sum.",
+    "parameters": {
+      "a": {"type": "number"},
+      "b": {"type": "number"},
+      "c": {"type": "number"}
+    },
+    "returns": {"type": "number"}
+  },
+  {
     "name": "fn_greet",
     "description": "Generate a greeting message for a person by name.",
     "parameters": {
