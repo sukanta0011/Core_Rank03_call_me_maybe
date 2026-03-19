@@ -1,10 +1,47 @@
 [
     {
-        "prompt": "what is the total sum three numbers 5, 2 and 3?",
-        "fn_name": "fn_add_numbers",
-        "fn_args": {
-            "a": 5,
-            "b": 2
+        "prompt": "Replace all the alphabets in 'hi1245 assuu152' with digit 0",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "hi1245 assuu152",
+            "regex": "([a-z])",
+            "replacement": "0"
+        }
+    },
+    {
+        "prompt": "Replace consonants in 'Programming is fun' with hash",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "Programming is fun",
+            "regex": "([[: consonants]]|[^[: consonants]]|[^[: consonants]]|[^[:",
+            "replacement": "##"
+        }
+    },
+    {
+        "prompt": "Replace the 'space' in 'Programming is fun' with 'underscore'",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "Programming is fun",
+            "regex": "(\\s)",
+            "replacement": "______"
+        }
+    },
+    {
+        "prompt": "Replace the spaces in 'Programming is fun' with underscore",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "Programming is fun",
+            "regex": " ",
+            "replacement": "______"
+        }
+    },
+    {
+        "prompt": "Replace all spaces in 'Programming   is fun' with underscore",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "Programming    is fun",
+            "regex": " ",
+            "replacement": "_"
         }
     }
 ]

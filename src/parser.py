@@ -11,9 +11,10 @@ from src.custom_errors import CLIParsingError, SourceError
 
 
 class Flags(StrEnum):
-    INPUT: str = "--input"
-    FUNCTION: str = "--functions_definition"
-    OUTPUT: str = "--output"
+    INPUT = "--input"
+    FUNCTION = "--functions_definition"
+    OUTPUT = "--output"
+
 
 @dataclass
 class ResourcePath:
@@ -21,7 +22,7 @@ class ResourcePath:
     inputs: str = "data/input/function_calling_tests.json"
     outputs: str = "data/output/function_calling_results.json"
 
-    #test paths
+    # test paths
     # function_def: str = "data/input/test_functions.json"
     # inputs: str = "data/input/test_prompt.json"
     # outputs: str = "data/output/test_results.json"
@@ -90,7 +91,7 @@ class Prompts(BaseModel):
 
 
 class Parser():
-    def __init__(self):
+    def __init__(self) -> None:
         self.functions: List[FnInfo] = []
         self.prompts: List[Prompts] = []
 
@@ -128,7 +129,8 @@ class Parser():
         if not path_obj.exists():
             raise SourceError("function_definition path is wrong")
         if path_obj.suffix != '.json':
-            raise SourceError("function_definition need to be in 'json' format")
+            raise SourceError(
+                "function_definition need to be in 'json' format")
 
         path_obj = Path(ResourcePath.inputs)
         if not path_obj.exists():

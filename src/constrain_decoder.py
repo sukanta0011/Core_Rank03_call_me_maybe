@@ -1,28 +1,10 @@
 import time
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Any
 import re
-from pydantic import BaseModel, Json
 from llm_sdk import Small_LLM_Model
-from src.token_generator import TokenGenerator
+from src.token_generator import TokenGenerator, Output
 from src.helper_functions import initial_prompt_toke
 from src.parser import FnInfo, Prompts
-
-REGEX_LIBRARY = {
-            "digits": r"\d+",
-            "vowels": "[aeiouAEIOU]",
-            "asterisks": r"\*",
-            "hashes": r"\#",
-            "lowercase": "[a-z]+"
-        }
-
-
-class Output(BaseModel):
-    prompt: str = ""
-    fn_name: str = ""
-    fn_args: Dict[str, Any] = {}
-
-    def get_json_str(self) -> Json:
-        return self.model_dump_json(indent=2)
 
 
 class ConstrainDecoder:
@@ -42,28 +24,21 @@ class ConstrainDecoder:
         token_patch = self.encode(str_patch)
         return self.tkn_generator.add_to_prompt(token_patch)
 
-    def substitute_regex(self, raw_output: str) -> str:
-        clean_output = raw_output.strip().lower()
-        for key, val in REGEX_LIBRARY.items():
-            if clean_output in key:
-                return val
-        return raw_output
-
     def generate(self, prompt: str, out: Output) -> None:
         starting_prompt = f'Question: "{prompt}",\n'
         self.add_str_to_prompt(starting_prompt)
 
-        self.add_str_to_prompt('{"fn_name": "')
+        self.add_str_to_prompt('{"name": "fn')
         # print(f"prompt: {self.tokenizer.decode(
         #     self.constrain_decoder.prompt_tokens)}")
         final_fn = self.tkn_generator.\
             generate_function_name(self.functions)
 
-        final_fn_name = self.decode(final_fn[: -1])
+        final_fn_name = "fn" + self.decode(final_fn[: -1])
         # self.tkn_generator.slice_prompt_tokens(0, before_fn_pos)
         for fn in self.functions:
             if final_fn_name == fn.fn_name:
-                out.fn_name = final_fn_name
+                out.name = final_fn_name
                 self.handle_arguments(prompt, fn, out)
         self.add_str_to_prompt("},\n},")
 
@@ -80,14 +55,9 @@ class ConstrainDecoder:
     def handle_arguments(self, prompt: str,
                          fn: FnInfo, out: Output) -> None:
         original_prompt = prompt
-        # if "regex" in fn.fn_name:
-        #     prompt = self.modify_prompt_for_regex(prompt)
-            # print(prompt)
-        # if "numbers" in final_fn_name:
-        #     prompt += "\nExample: add -2 and 3, a: -2, b: 3"
 
         prompt_tokens = self.get_all_allowed_token(prompt)
-        initial_arg_token = ',\n"args": {'
+        initial_arg_token = ',\n"parameters": {'
         self.add_str_to_prompt(initial_arg_token)
         total_args = len(fn.args_names)
 
@@ -112,17 +82,17 @@ class ConstrainDecoder:
         if arg_type == 'number':
             try:
                 if "." in val:
-                    out.fn_args[key] = float(val)
+                    out.parameters[key] = float(val)
                 else:
-                    out.fn_args[key] = int(val)
+                    out.parameters[key] = int(val)
             except ValueError:
-                out.fn_args[key] = ""
+                out.parameters[key] = ""
                 print(f"{key} has not numeric value: {val}")
         elif arg_type == 'bool':
             if 'right' in val.lower() or 'true' in val.lower():
-                out.fn_args[key] = True
+                out.parameters[key] = True
             elif 'wrong' in val.lower() or 'false' in val.lower():
-                out.fn_args[key] = False
+                out.parameters[key] = False
         else:
             str_in_args = re.findall("[^\",}]", val)
             clean_val = "".join(str_in_args)
@@ -138,7 +108,7 @@ class ConstrainDecoder:
             #     # print(regex_prompt)
             #     self.tkn_generator.generate_args_val(
             #         [], key, val, symbol_prompt, 0)
-            out.fn_args[key] = clean_val
+            out.parameters[key] = clean_val
 
     def generate_for_all_prompts(self, prompts: List[Prompts]) -> List[Output]:
         for prompt in prompts:
@@ -156,6 +126,9 @@ class ConstrainDecoder:
             print(self.decode(final_token[len(initial_token):]))
             self.output.append(out)
             end = time.time()
-            print("\033[92mToken generation time: "
-                  f"{(end - start):.3f}s\033[0m")
+            time_taken = round((end - start), 3)
+            tokens_spend = self.tkn_generator.get_total_token_spend()
+            avg_cost = round(time_taken / tokens_spend, 3)
+            print(f"\033[92mTokens Used: {tokens_spend},"
+                  f" Time: {time_taken}s, Cost/Token: {avg_cost}s\033[0m")
         return self.output

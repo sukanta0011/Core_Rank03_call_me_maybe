@@ -1,15 +1,24 @@
 import numpy as np
 from typing import List, Dict, Callable
-from src.parser import FnInfo
+from .parser import FnInfo
 
 
-def show_toke_distribution(data: List[float], bin_spacing: int):
+def show_toke_distribution(
+        data: List[float], bin_spacing: int) -> None:
     min_val = min(data)
     max_mal = max(data)
     bins = np.arange(min_val, max_mal, bin_spacing)
     counts, _ = np.histogram(data, bins)
     for b, c in zip(bins, counts):
         print(f"{b}: {c}")
+
+
+def is_valid_num(val: str) -> bool:
+    try:
+        float(val)
+        return True
+    except ValueError:
+        return False
 
 
 def char_feq(data: Dict) -> Dict[str, int]:
@@ -21,6 +30,22 @@ def char_feq(data: Dict) -> Dict[str, int]:
             else:
                 char_hash[c] = 1
     return char_hash
+
+
+def show_top_logits(decode: Callable,
+                    logits_np: List[int],
+                    max_logits_idx: int,
+                    top: int) -> None:
+    sorted_idx = np.argsort(logits_np)
+    top_ten = sorted_idx[-top:]
+    tokens_with_prob = ""
+    for token in top_ten:
+        # print(f"{token}, {self.tokenizer.decode([token])}, {logits[token]}")
+        tokens_with_prob += f"{
+            decode([token])}({round(logits_np[token], 2)}),"
+    tokens_with_prob += (
+        f"\033[92mSelected token: {decode([max_logits_idx])}\033[0m")
+    print(tokens_with_prob)
 
 
 def initial_prompt_toke(prompt: str, functions: List[FnInfo],
@@ -41,13 +66,5 @@ def initial_prompt_toke(prompt: str, functions: List[FnInfo],
         "'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
         )
 
-    tokens = encode(pre_prompt)
+    tokens: List[int] = encode(pre_prompt)
     return tokens
-
-
-def is_valid_num(val: str) -> bool:
-    try:
-        float(val)
-        return True
-    except ValueError:
-        return False

@@ -2,39 +2,42 @@ import time
 import sys
 # from src.helper_functions import load_json
 # from src.ConstrainDecoder import ConstrainDecoder
-from typing import List
+from typing import List, Tuple
 from pydantic import TypeAdapter
 from llm_sdk import Small_LLM_Model
-from src.parser import (
-    Parser, ResourcePath)
-from src.constrain_decoder import ConstrainDecoder, Output
-from src.tokenizer import Tokenizer
+from .parser import (
+    Parser, ResourcePath, FnInfo)
+from .constrain_decoder import ConstrainDecoder, Output
+from .token_generator import Cost
+from .tokenizer import Tokenizer
+from .helper_functions import initial_prompt_toke
 
 
-def main() -> None:
-    try:
-        my_prompts = [
-            # "How do I calculate my age difference if I was born in year 1996 "
-            # "and now the year is 2025",
+def custom_prompts() -> List[str]:
+    prompts = [
             # "Replace all alphabets in 'hi1245 assuu152' with digit 0",
-            # "Replace all the 'alphabet' in 'hi1245 assuu152' with digit 0",
-            # "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
-            # "Substitute the digits in the string 'Hello 34 I'm 233 years old' with 'NUMBERS'",
-            # "Substitute all alphabet between a-z in the string 'Hello 34 I'm 233 years old' with digits",
+            "Replace all the alphabets in 'hi1245 assuu152' with digit 0",
+            "Replace all numbers in \"Hello 34 I'm "
+            "233 years old\" with NUMBERS",
+            "Substitute the digits in the string 'Hello"
+            " 34 I'm 233 years old' with 'NUMBERS'",
+            "Substitute all alphabet between a-z in the "
+            "string 'Hello 34 I'm 233 years old' with digits",
             # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
             # "Replace all vowels in 'Programming is fun' with asterisks",
-            # "Replace consonants in 'Programming is fun' with hash",
-            # "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'",
-            # "Replace the 'space' in 'Programming is fun' with 'underscore'",
-            # "Replace the spaces in 'Programming is fun' with underscore",
-            # "Replace all spaces in 'Programming   is fun' with underscore",
+            "Replace consonants in 'Programming is fun' with hash",
+            "Substitute the word 'cat' with 'dog' in "
+            "'The cat sat on the mat with another cat'",
+            "Replace the 'space' in 'Programming is fun' with 'underscore'",
+            "Replace the spaces in 'Programming is fun' with underscore",
+            "Replace all spaces in 'Programming   is fun' with underscore",
             # "replace the user in email id user@email.com with user123",
             # "replace the 'user' in email id 'user@email.com' with 'user123'",
             # "replace all a in the word hella warld with o",
             # "replace all 'a' in the word 'hella warld' with 'o'",
 
-            # "what is the sum of -20.25 and 30.57?",
-            "what is the total sum three numbers 5, 2 and 3?",
+            # "what is the sum of -21567850.25 and 30.5545665427?",
+            # "what is the sum of -520, -2.5 and -30?",
 
             # "reverse sukanta das",
             # "reverse 'sukanta das'",
@@ -66,7 +69,54 @@ def main() -> None:
             # "Mango is not a vegetable",
             # "Mango is a vegetable. Wrong",
         ]
+    return prompts
 
+
+def initialize_pipeline(
+        device: str = 'cpu'
+        ) -> Tuple[ConstrainDecoder, List[FnInfo]]:
+    """Load model and tokenizer once."""
+    llm = Small_LLM_Model(device=device)
+    token_path = llm.get_path_to_vocab_file()
+    tokenizer = Tokenizer(path=token_path)
+
+    parser = Parser()
+    Parser.parse_cli_arguments(sys.argv)
+    Parser.validate_resources()
+    functions = parser.load_functions(
+        ResourcePath.function_def, tokenizer.encode)
+    token_set = tokenizer.get_all_tokes()
+
+    decoder = ConstrainDecoder(
+        llm, functions, token_set, tokenizer.encode, tokenizer.decode)
+
+    return decoder, functions
+
+
+def function_generator(
+        prompt: str, decoder: ConstrainDecoder
+        ) -> Tuple[Output, Cost]:
+    """Generate a single function call from a prompt."""
+    start = time.time()
+    out = Output()
+    cost = Cost()
+    out.prompt = prompt
+    decoder.tkn_generator.re_initialize_prompt_token()
+
+    initial_token = initial_prompt_toke(
+        prompt, decoder.functions, decoder.encode)
+    decoder.tkn_generator.add_to_prompt(initial_token)
+    decoder.generate(prompt, out)
+
+    end = time.time()
+    cost.time_taken = round((end - start), 3)
+    cost.token_used = decoder.tkn_generator.get_total_token_spend()
+    cost.avg_time = round(cost.time_taken / cost.token_used, 3)
+    return out, cost
+
+
+def main() -> None:
+    try:
         start = time.time()
         llm = Small_LLM_Model(device='cpu')
         token_path = llm.get_path_to_vocab_file()
@@ -83,19 +133,19 @@ def main() -> None:
         Parser.parse_cli_arguments(sys.argv)
         Parser.validate_resources()
         functions = parser.load_functions(ResourcePath.function_def, encode)
-        # print(functions)
-        # for fun in functions:
-        #     print(fun.fn_name)
 
-        # prompts = parser.load_prompts(ResourcePath.inputs)
-        prompts = parser.load_prompts(my_prompts)
+        prompts = parser.load_prompts(ResourcePath.inputs)
+
+        # prompts = custom_prompts()
+        # prompts = parser.load_prompts(prompts)
 
         prompt_generator = ConstrainDecoder(
-            llm, functions, token_set, encode, decode)
+            llm, functions, token_set,
+            encode, decode)
+
         outputs = prompt_generator.generate_for_all_prompts(prompts)
         end = time.time()
         print(f"function generation time {(end - mid):.3f}s")
-
         # Saving the outputs
         adapter = TypeAdapter(List[Output])
         json_data = adapter.dump_json(outputs, indent=4).decode('utf-8')
@@ -104,14 +154,6 @@ def main() -> None:
 
     except Exception as e:
         print(e)
-
-
-def extract_probability():
-    with open("src/demo.txt", "r") as fl:
-        data = fl.read()
-    data = data[1: -1].split(",")
-    data = [float(d) for d in data]
-    return data
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ class Tokenizer:
         # new_key = key.replace("Ġ", " ").replace("Ċ", "\n").replace("ĉ", "\t")
         return key
 
-    def _create_encoder_decoder(self, path: str):
+    def _create_encoder_decoder(self, path: str) -> None:
         with open(path, 'r') as fl:
             data = json.load(fl)
         self._decoder_list = [""] * (len(data.values()) + 1)
@@ -31,7 +31,6 @@ class Tokenizer:
             self.__encoder_dict[new_key] = val
             # self.__decoder_list[val] = new_key
             self.__decoder_list.append(new_key)
-
         del data
 
     @staticmethod
@@ -41,7 +40,7 @@ class Tokenizer:
             if len(str) > max_len:
                 max_len = len(str)
         return max_len
-    
+
     def get_all_tokes(self) -> List[str]:
         return self.__decoder_list
 
@@ -91,18 +90,17 @@ class Tokenizer:
         return string
 
 
-def test_toke_encoder():
+def test_toke_encoder() -> None:
     start = time.time()
     from llm_sdk import Small_LLM_Model
     llm = Small_LLM_Model()
-    token_path = llm.get_path_to_vocabulary_json()
+    token_path = llm.get_path_to_vocab_file()
 
     tokenizer = Tokenizer(path=token_path)
     # print(len(encoder_decoder._decoder_list))
-    # msg = "This is a classic 'hardware vs. software' version mismatch often seen in older workstations. Your NVIDIA GT 1030 has a Pascal architecture (Compute Capability 6.1), but modern versions of PyTorch (like the 2.9.1 required in your dependencies) have dropped support for anything older than Volta (7.0) in their pre-compiled binaries. The workstation's GPU (GT 1030) has a Compute Capability of 6.1, which is deprecated in PyTorch 2.x. To ensure stability and graceful error handling as required by the subject, I forced the model to CPU mode, which still meets the < 5 minute processing requirement for the test prompts."
     msg = "Greet shrek"
     start_1 = time.time()
-    tokens1 = llm._encode(msg).tolist()[0]
+    tokens1 = llm.encode(msg).tolist()[0]
     print(f"Built-in encoder: {tokens1}")
     end_1 = time.time()
     print(f"Time taken: {(end_1 - start_1):.3f}s")
@@ -113,11 +111,12 @@ def test_toke_encoder():
     print(f"Time taken: {(end_1 - start_1):.3f}s")
 
     start_1 = time.time()
-    print(f"Built-in decoder: {[llm._decode(token) for token in tokens1]}")
+    print(f"Built-in decoder: {[llm.decode(token) for token in tokens1]}")
     end_1 = time.time()
     print(f"Time taken: {(end_1 - start_1):.3f}s")
     start_1 = time.time()
-    print(f"Custom decoder: {[tokenizer.decode(token) for token in tokens2]}")
+    print(f"Custom decoder: {[tokenizer.decode([token])
+                              for token in tokens2]}")
     end_1 = time.time()
     print(f"Time taken: {(end_1 - start_1):.3f}s")
 
