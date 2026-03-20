@@ -6,11 +6,14 @@ from typing import List, Tuple
 from pydantic import TypeAdapter
 from llm_sdk import Small_LLM_Model
 from .parser import (
-    Parser, ResourcePath, FnInfo)
-from .constrain_decoder import ConstrainDecoder, Output
-from .token_generator import Cost
+    CLI_Parser, FnInfo,
+    FunctionLoader, PromptLoader)
+from .constrain_decoder import (
+    ConstrainDecoder, Output,
+    build_initial_prompt)
+from .token_generator import GenerationCost
 from .tokenizer import Tokenizer
-from .helper_functions import initial_prompt_toke
+from .custom_errors import SourceError
 
 
 def custom_prompts() -> List[str]:
@@ -75,16 +78,20 @@ def custom_prompts() -> List[str]:
 def initialize_pipeline(
         device: str = 'cpu'
         ) -> Tuple[ConstrainDecoder, List[FnInfo]]:
-    """Load model and tokenizer once."""
-    llm = Small_LLM_Model(device=device)
-    token_path = llm.get_path_to_vocab_file()
-    tokenizer = Tokenizer(path=token_path)
+    """Load model, tokenizer, and function registry.
 
-    parser = Parser()
-    Parser.parse_cli_arguments(sys.argv)
-    Parser.validate_resources()
-    functions = parser.load_functions(
-        ResourcePath.function_def, tokenizer.encode)
+    Args:
+        paths: Validated resource file paths
+        device: Compute device ('cpu', 'cuda', 'mps')
+
+    Returns:
+        Tuple of (decoder, functions) ready for generation
+    """
+    llm = Small_LLM_Model(device=device)
+    tokenizer = Tokenizer(path=llm.get_path_to_vocab_file())
+    paths = CLI_Parser.parse_cli_arguments(sys.argv)
+    functions = FunctionLoader.load_json(
+        paths.function_def, tokenizer.encode)
     token_set = tokenizer.get_all_tokes()
 
     decoder = ConstrainDecoder(
@@ -95,30 +102,29 @@ def initialize_pipeline(
 
 def function_generator(
         prompt: str, decoder: ConstrainDecoder
-        ) -> Tuple[Output, Cost]:
+        ) -> Tuple[Output, GenerationCost]:
     """Generate a single function call from a prompt."""
     start = time.time()
     out = Output()
-    cost = Cost()
+    cost = GenerationCost()
     out.prompt = prompt
     decoder.tkn_generator.re_initialize_prompt_token()
 
-    initial_token = initial_prompt_toke(
+    initial_token = build_initial_prompt(
         prompt, decoder.functions, decoder.encode)
     decoder.tkn_generator.add_to_prompt(initial_token)
     decoder.generate(prompt, out)
 
     end = time.time()
-    cost.time_taken = round((end - start), 3)
+    cost.time_taken_seconds = round((end - start), 3)
     cost.token_used = decoder.tkn_generator.get_total_token_spend()
-    cost.avg_time = round(cost.time_taken / cost.token_used, 3)
     return out, cost
 
 
 def main() -> None:
     try:
         start = time.time()
-        llm = Small_LLM_Model(device='cpu')
+        llm = Small_LLM_Model(device='cuda')
         token_path = llm.get_path_to_vocab_file()
         tokenizer = Tokenizer(path=token_path)
         encode = tokenizer.encode
@@ -129,12 +135,12 @@ def main() -> None:
         mid = time.time()
         print(f"LLM loaded in {(mid - start):.3f}s")
 
-        parser = Parser()
-        Parser.parse_cli_arguments(sys.argv)
-        Parser.validate_resources()
-        functions = parser.load_functions(ResourcePath.function_def, encode)
+        paths = CLI_Parser.parse_cli_arguments(sys.argv)
 
-        prompts = parser.load_prompts(ResourcePath.inputs)
+        functions = FunctionLoader.load_json(
+            paths.function_def, encode)
+
+        prompts = PromptLoader.load_json(paths.inputs)
 
         # prompts = custom_prompts()
         # prompts = parser.load_prompts(prompts)
@@ -146,16 +152,20 @@ def main() -> None:
         outputs = prompt_generator.generate_for_all_prompts(prompts)
         end = time.time()
         print(f"function generation time {(end - mid):.3f}s")
+
         # Saving the outputs
         adapter = TypeAdapter(List[Output])
         json_data = adapter.dump_json(outputs, indent=4).decode('utf-8')
-        with open(ResourcePath.outputs, 'w') as fl:
+        with open(paths.outputs, 'w') as fl:
             fl.write(json_data)
 
+    except SourceError as e:
+        print("Configuration error: ", e)
+    except KeyboardInterrupt:
+        print("Interrupted by user")
     except Exception as e:
-        print(e)
+        print(f"Unexpected error: {e}")
 
 
 if __name__ == "__main__":
-    # test_llm()
     main()

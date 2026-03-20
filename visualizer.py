@@ -11,7 +11,7 @@ def load_pipeline() -> Tuple[ConstrainDecoder, List[FnInfo]]:
     with st.spinner("Loading model..."):
         # st.write("Loading model... (only happens once)"
         pass
-    decoder, functions = initialize_pipeline(device='cpu')
+    decoder, functions = initialize_pipeline(device='cuda')
     return decoder, functions
 
 
@@ -58,7 +58,7 @@ if run and prompt:
                 "parameters": result.parameters
             })
             st.markdown(f"Tokens Used: :green[{cost.token_used}],"
-                        f" Time: :green[{cost.time_taken}]s, "
+                        f" Time: :green[{cost.time_taken_seconds}]s, "
                         f"Cost/Token: :green[{cost.avg_time}]s")
 
         except Exception as e:
