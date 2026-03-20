@@ -92,7 +92,7 @@ mkdir -p /goinfre/$USER/hf_cache
 
 # Set environment variables
 export UV_CACHE_DIR="/goinfre/$USER/uv_cache"
-export HF_HOME="/goinfre/$USER/huggingface"
+
 ```
 
 > **Important:** Also copy your project into `goinfre` or `sgoinfre`. Running from
