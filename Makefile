@@ -40,6 +40,12 @@ run:
 	fi
 	$(ENV) run $(PYTHON) -m src
 
+visual:
+	@if [ ! -d ".$(ENV_NAME)" ]; then \
+		make install;\
+	fi
+	streamlit run visualizer.py
+
 debug:
 	@if [ ! -d ".$(ENV_NAME)" ]; then \
 		make install;\

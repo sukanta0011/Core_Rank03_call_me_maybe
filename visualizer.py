@@ -11,7 +11,7 @@ def load_pipeline() -> Tuple[ConstrainDecoder, List[FnInfo]]:
     with st.spinner("Loading model..."):
         # st.write("Loading model... (only happens once)"
         pass
-    decoder, functions = initialize_pipeline(device='cuda')
+    decoder, functions = initialize_pipeline(device='cpu')
     return decoder, functions
 
 

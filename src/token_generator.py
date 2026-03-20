@@ -194,7 +194,10 @@ class TokenGenerator:
             ) -> str | None:
         """Return the unique word in prompt that starts with sub_str,
         or None if no unique match exists."""
-        if len(sub_str.strip()) == 0:
+        cleaned_token = sub_str.strip()
+        if (len(cleaned_token) == 0 or
+            cleaned_token == ConstantParams.STR_TERMINATOR or
+                cleaned_token == ConstantParams.NUM_TERMINATOR):
             return None
 
         num_type = {"float", "int", "num", "number"}
@@ -204,7 +207,7 @@ class TokenGenerator:
             pattern = r"\b" + re.escape(sub_str) + r"\w*"
 
         match = re.findall(pattern, prompt)
-        unique_matches = list(set(match))
+        unique_matches: List[str] = list(set(match))
 
         if len(unique_matches) == 1:
             return unique_matches[0]

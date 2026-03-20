@@ -22,7 +22,7 @@ class ResourcePaths:
 
     Attributes:
         function_def: Path to function definitions JSON
-        inputs: Path to input prompts JSON  
+        inputs: Path to input prompts JSON
         outputs: Path to write results JSON
     """
     function_def: Path
@@ -52,10 +52,10 @@ class CLI_Parser:
 
         Args:
             argv: Command line arguments, typically sys.argv
-  
+
         Returns:
             ResourcePaths with all paths validated
-  
+
         Raises:
             SystemExit: If arguments are invalid (argparse handles this)
             SourceError: If paths don't exist or have wrong format
@@ -248,7 +248,7 @@ class Output(BaseModel):
 class FunctionLoader():
     """Loads and tokenizes function definitions from JSON."""
     @staticmethod
-    def load_json(path: str, encode: Callable) -> List[FnInfo]:
+    def load_json(path: Path, encode: Callable) -> List[FnInfo]:
         """Load function definitions from a JSON file.
 
         Args:

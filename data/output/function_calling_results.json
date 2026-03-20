@@ -80,7 +80,7 @@
         "parameters": {
             "source_string": "Hello 34 I'm 233 years old",
             "regex": "(\\d+)",
-            "replacement": "NUMBERS Hello"
+            "replacement": "NUMBERS"
         }
     },
     {
