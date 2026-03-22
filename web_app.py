@@ -65,10 +65,10 @@ st.caption(
     "Natural language → structured function calls "
     "using constrained decoding  |  Model: Qwen/Qwen3-0.6B"
 )
-st.info(
-    "⏳ First load takes 2-3 minutes while the model downloads (~2GB). "
-    "Subsequent requests are faster."
-)
+# st.info(
+#     "⏳ First load takes 2-3 minutes while the model downloads (~2GB). "
+#     "Subsequent requests are faster."
+# )
 
 # Load pipeline once
 _, functions, _, _, _ = load_shared_resources()
@@ -86,7 +86,7 @@ with col1:
 with col2:
     # Show the example prompts
     examples = (
-        "What is the sum of 3 and 5?",
+        "What is the of 3 and 5?",
         "Greet john",
         "Reverse the string 'hello'",
         "What is the square root of 16?",

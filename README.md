@@ -16,6 +16,7 @@ output, even with the small Qwen3-0.6B model. Instead of answering a question
 directly, the model is guided to predict which function to call and what arguments
 to pass, producing a structured function call as output.
 
+
 **Example:**
 
 ```
@@ -35,6 +36,10 @@ This project extends beyond the base requirements with two additional features:
 - A **Streamlit web interface** that provides an interactive browser-based UI for
   running the model and exploring results in real time.
 
+
+![](screenshots\call_me_maybe_gif.gif)
+
+[https://huggingface.co/spaces/sudas00/CallMeMayBe](https://huggingface.co/spaces/sudas00/CallMeMayBe)
 ---
 
 ## Instructions
