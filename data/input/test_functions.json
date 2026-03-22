@@ -9,6 +9,33 @@
     "returns": {"type": "number"}
   },
   {
+    "name": "fn_calculate_compound_interest",
+    "description": "Calculate compound interest: principal * (1 + rate)^years.",
+    "parameters": {
+      "principal": {"type": "number"},
+      "rate": {"type": "number"},
+      "years": {"type": "integer"}
+    },
+    "returns": {
+      "type": "number"
+    }
+  },
+  {
+    "name": "fn_execute_sql_query",
+    "description": "Execute a SQL query on a specified database.",
+    "parameters": {
+      "query": {
+        "type": "string"
+      },
+      "database": {
+        "type": "string"
+      }
+    },
+    "returns": {
+      "type": "string"
+    }
+  },
+  {
     "name": "fn_subtract_numbers",
     "description": "Subtract the second number from the first and return the result.",
     "parameters": {
@@ -16,6 +43,21 @@
       "b": {"type": "number"}
     },
     "returns": {"type": "number"}
+  },
+  {
+    "name": "fn_read_file",
+    "description": "Read a file from the given path with specified encoding.",
+    "parameters": {
+      "path": {
+        "type": "string"
+      },
+      "encoding": {
+        "type": "string"
+      }
+    },
+    "returns": {
+      "type": "string"
+    }
   },
   {
     "name": "fn_multiply_numbers",
@@ -159,7 +201,7 @@
     "parameters": {
       "s": {"type": "string"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_string_contains",
@@ -168,7 +210,7 @@
       "source": {"type": "string"},
       "substring": {"type": "string"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_starts_with",
@@ -177,7 +219,7 @@
       "s": {"type": "string"},
       "prefix": {"type": "string"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_ends_with",
@@ -186,7 +228,7 @@
       "s": {"type": "string"},
       "suffix": {"type": "string"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_is_even",
@@ -194,7 +236,7 @@
     "parameters": {
       "n": {"type": "number"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_is_positive",
@@ -202,7 +244,7 @@
     "parameters": {
       "n": {"type": "number"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_is_prime",
@@ -210,7 +252,7 @@
     "parameters": {
       "n": {"type": "number"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_compare_numbers",
@@ -219,7 +261,7 @@
       "a": {"type": "number"},
       "b": {"type": "number"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   },
   {
     "name": "fn_check_strings_equal",
@@ -228,6 +270,6 @@
       "a": {"type": "string"},
       "b": {"type": "string"}
     },
-    "returns": {"type": "bool"}
+    "returns": {"type": "boolean"}
   }
 ]

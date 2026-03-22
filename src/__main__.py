@@ -125,7 +125,7 @@ def function_generator(
 def main() -> None:
     try:
         start = time.time()
-        llm = Small_LLM_Model(device='cpu')
+        llm = Small_LLM_Model(device='cuda')
         token_path = llm.get_path_to_vocab_file()
         tokenizer = Tokenizer(path=token_path)
         encode = tokenizer.encode
@@ -149,6 +149,11 @@ def main() -> None:
         prompt_generator = ConstrainDecoder(
             llm, functions, token_set,
             encode, decode)
+
+        def on_token(token_str: str) -> None:
+            print(token_str)
+        if paths.token_gen_status:
+            prompt_generator.set_callback(on_token)
 
         outputs = prompt_generator.generate_for_all_prompts(prompts)
         end = time.time()

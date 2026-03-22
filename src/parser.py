@@ -28,6 +28,7 @@ class ResourcePaths:
     function_def: Path
     inputs: Path
     outputs: Path
+    token_gen_status: bool
 
     # Defaults live here as class constants
     DEFAULT_FUNCTIONS: ClassVar[str] = \
@@ -36,6 +37,7 @@ class ResourcePaths:
         "data/input/function_calling_tests.json"
     DEFAULT_OUTPUTS: ClassVar[str] = \
         "data/output/function_calling_results.json"
+    DEFAULT_TOKEN_GEN: ClassVar[bool] = False
 
     # test paths
     # function_def: str = "data/input/test_functions.json"
@@ -80,13 +82,20 @@ class CLI_Parser:
             default=ResourcePaths.DEFAULT_OUTPUTS,
             help="Path to output results JSON"
         )
+        parser.add_argument(
+            "--token_gen",
+            action="store_true",
+            default=False,
+            help="Token Generation printing status"
+        )
 
         args = parser.parse_args(argv[1:])
 
         paths = ResourcePaths(
             function_def=Path(args.functions_definition),
             inputs=Path(args.input),
-            outputs=Path(args.output)
+            outputs=Path(args.output),
+            token_gen_status=args.token_gen,
         )
         return CLI_Parser._validate_paths(paths)
 
@@ -150,7 +159,8 @@ class FnInfo(BaseModel):
         return_type: The return type of the function
     """
 
-    VALID_TYPES: ClassVar[Set[str]] = {"number", "string", "bool"}
+    VALID_TYPES: ClassVar[Set[str]] = {
+        "number", "string", "boolean", "integer"}
 
     fn_name: str = Field(min_length=2, alias="name")
     description: str = Field(default="", alias="description")

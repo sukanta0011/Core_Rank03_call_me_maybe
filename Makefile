@@ -44,7 +44,7 @@ visual:
 	@if [ ! -d ".$(ENV_NAME)" ]; then \
 		make install;\
 	fi
-	streamlit run visualizer.py
+	streamlit run web_app.py
 
 debug:
 	@if [ ! -d ".$(ENV_NAME)" ]; then \

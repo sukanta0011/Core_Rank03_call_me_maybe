@@ -1,8 +1,9 @@
 import time
-from typing import List, Callable, Any
+import threading
+from typing import List, Callable, Any, Optional
 import re
 from llm_sdk import Small_LLM_Model
-from .token_generator import TokenGenerator
+from .token_generator import TokenGenerator, ConstantParams
 from .parser import FnInfo, Prompts, Output
 
 
@@ -62,7 +63,9 @@ class ConstrainDecoder:
     def __init__(self, llm: Small_LLM_Model,
                  functions: List[FnInfo],
                  token_set: List[str],
-                 encode: Callable, decode: Callable) -> None:
+                 encode: Callable, decode: Callable,
+                 interface_lock: threading.Lock = None,
+                 ) -> None:
         """Initialise the decoder with model and function registry.
 
         Args:
@@ -74,13 +77,23 @@ class ConstrainDecoder:
         """
         self.llm = llm
         self.functions = functions
-        self.tkn_generator = TokenGenerator(llm, token_set, encode, decode)
+        self.tkn_generator = TokenGenerator(
+            llm, token_set, encode, decode,
+            ConstantParams.TOKEN_LIMITS,
+            interface_lock=interface_lock)
         self.encode = encode
         self.decode = decode
 
     def add_str_to_prompt(self, string: str) -> int:
         token_patch = self.encode(string)
         return self.tkn_generator.add_to_prompt(token_patch)
+
+    def set_callback(
+            self,
+            callback: Optional[Callable[[str], None]]
+            ) -> None:
+        """Set or clear the streaming token callback."""
+        self.tkn_generator.on_token = callback
 
     def generate(self, prompt: str, out: Output) -> None:
         """Process a single natural language prompt.
@@ -91,6 +104,7 @@ class ConstrainDecoder:
         Returns:
             FunctionCall with name and typed parameters
         """
+        prompt = prompt.replace('"', "'")
         starting_prompt = f'Question: "{prompt}",\n'
         self.add_str_to_prompt(starting_prompt)
 
@@ -145,8 +159,7 @@ class ConstrainDecoder:
 
         for i, arg in enumerate(fn.args_names):
             arg_type = fn.args_types[arg]
-            if (arg_type == "float" or arg_type == "int" or
-               arg_type == "number"):
+            if (arg_type == "integer" or arg_type == "number"):
                 self.add_str_to_prompt(f'"{arg}": ')
             else:
                 self.add_str_to_prompt(f'"{arg}": "')
@@ -171,27 +184,32 @@ class ConstrainDecoder:
 
         Returns:
             Typed value matching the schema"""
-        if arg_type == 'number':
+
+        if arg_type == 'number' or arg_type == 'integer':
             try:
-                if "." in val:
+                if arg_type == 'number':
                     out.parameters[key] = float(val)
-                else:
+                elif arg_type == 'integer':
                     out.parameters[key] = int(val)
             except ValueError:
                 out.parameters[key] = ""
                 print(f"{key} has not numeric value: {val}")
-        elif arg_type == 'bool':
+        elif arg_type == 'boolean':
             if 'right' in val.lower() or 'true' in val.lower():
                 out.parameters[key] = True
             elif 'wrong' in val.lower() or 'false' in val.lower():
                 out.parameters[key] = False
         else:
-            str_in_args = re.findall("[^\",}]", val)
-            clean_val = "".join(str_in_args)
+            # str_in_args = re.findall("[^\",}]", val)
+            str_in_args = re.search('.*"', val)
+            if str_in_args:
+                clean_val = str_in_args.group()[:-1]
+            else:
+                clean_val = ""
             if len(clean_val) > 0 and len(clean_val.strip()) == 0:
                 clean_val = " "
             else:
-                clean_val = clean_val.strip()
+                clean_val = clean_val.strip().replace("\\\\", "\\")
             # if key == "replacement":
             #     symbol_prompt = (
             #         "\nWhat is the symbolic representation of"

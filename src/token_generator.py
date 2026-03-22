@@ -1,7 +1,9 @@
 from typing import List, Set, Callable, Tuple, Final, FrozenSet
 import numpy as np
+import threading
 import re
 from dataclasses import dataclass
+from typing import Callable, Optional
 from llm_sdk import Small_LLM_Model
 from .helper_functions import is_valid_num
 from .parser import FnInfo
@@ -104,7 +106,9 @@ class TokenGenerator:
             token_set: List[str],
             encode: Callable[[str], List[int]],
             decode: Callable[[int], str],
-            token_limit: int = ConstantParams.TOKEN_LIMITS
+            token_limit: int = ConstantParams.TOKEN_LIMITS,
+            on_token: Optional[Callable[[str], None]] = None,
+            interface_lock: threading.Lock = None
             ) -> None:
         """Initialise with model, vocabulary, and codec functions."""
         self.prompt_tokens: List[int] = []
@@ -114,6 +118,8 @@ class TokenGenerator:
         self.tkn_limits = token_limit
         self.token_set = token_set
         self.tokens_spend = 0
+        self.on_token = on_token
+        self._lock = interface_lock
 
         # Precomputed at init to avoid recomputing on every generation step
         self._regex = self.get_str_to_matching_tokens(
@@ -158,6 +164,17 @@ class TokenGenerator:
             for pattern in char_set if tok.startswith(pattern)
         ]
 
+    def _get_logits(self) -> List[float]:
+        """Get logits with lock to prevent concurrent inference."""
+        if self._lock:
+            with self._lock:
+                raw = self.llm.get_logits_from_input_ids(
+                    self.prompt_tokens)
+        else:
+            raw = self.llm.get_logits_from_input_ids(
+                self.prompt_tokens)
+        return raw
+
     def generate_function_name(
             self, allowed_token: List[FnInfo]) -> List[int]:
         """Generate a function name token by token using position-aware
@@ -165,10 +182,12 @@ class TokenGenerator:
         complete_fn_tokens: List[int] = []
         token: int | float = float("-inf")
         terminating_token = self.encode(ConstantParams.STR_TERMINATOR)
+        if self.on_token:
+            self.on_token("name: ")
 
         while (token != terminating_token[0] and
                len(complete_fn_tokens) < self.tkn_limits):
-            logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
+            logits = self._get_logits()
             next_allowed_tokens: Set[int] = set()
             complete_fn_len = len(complete_fn_tokens)
 
@@ -180,6 +199,9 @@ class TokenGenerator:
                     next_allowed_tokens.add(terminating_token[0])
 
             token = self.get_next_fn_token(logits, next_allowed_tokens)
+            token_str = self.decode(token)
+            if self.on_token:
+                self.on_token(token_str)
             complete_fn_tokens.append(token)
             self.prompt_tokens.append(token)
             self.tokens_spend += 1
@@ -200,7 +222,7 @@ class TokenGenerator:
                 cleaned_token == ConstantParams.NUM_TERMINATOR):
             return None
 
-        num_type = {"float", "int", "num", "number"}
+        num_type = {"integer", "number"}
         if arg_type in num_type:
             pattern = re.escape(sub_str) + "[0-9.]*"
         else:
@@ -227,16 +249,18 @@ class TokenGenerator:
         complete_arg_tokens: List[int] = []
         token: int | float = float("-inf")
 
-        if arg_type in {"float", "int", "number"}:
+        if arg_type in {"integer", "number"}:
             terminating_token = self.encode(ConstantParams.NUM_TERMINATOR)
         else:
             terminating_token = self.encode(ConstantParams.STR_TERMINATOR)
 
-        if arg_type == 'bool':
+        if arg_type == 'boolean':
             allowed_tokens.extend(self.encode('True'))
             allowed_tokens.extend(self.encode('False'))
 
         allowed_tokens.extend(terminating_token)
+        if self.on_token:
+            self.on_token(f"\n{arg_name}: ")
 
         token_counter = 0
         sub_str = ""
@@ -244,28 +268,32 @@ class TokenGenerator:
         while (token != terminating_token[0] and
                len(complete_arg_tokens) < self.tkn_limits):
 
-            logits = self.llm.get_logits_from_input_ids(self.prompt_tokens)
+            logits = self._get_logits()
             self.tokens_spend += 1
             token_counter += 1
 
-            if arg_type in {"float", "int", "number"}:
+            if arg_type in {"integer", "number"}:
                 token = self.get_next_numeric_token(
                     logits, set(allowed_tokens))
                 str_val = self.decode(token)
-
                 if " " in str_val:
                     str_val = str_val.strip()
                     token = self.encode(str_val)[0]
-
                 sub_str += str_val
                 matching_word = self.get_matching_word(
                     sub_str, prompt, arg_type)
+
+                if str_val.isdigit() or str_val in {"-", "."}:
+                    if self.on_token:
+                        self.on_token(str_val)
 
                 if matching_word is not None:
                     for _ in range(token_counter - 1):
                         self.prompt_tokens.pop()
                         complete_arg_tokens.pop()
                     if is_valid_num(matching_word):
+                        if self.on_token:
+                            self.on_token(f"->{matching_word}")
                         self.prompt_tokens.extend(self.encode(matching_word))
                         complete_arg_tokens.extend(self.encode(matching_word))
                         sub_str = ""
@@ -282,11 +310,15 @@ class TokenGenerator:
                 sub_str += str_val
                 matching_word = self.get_matching_word(
                     sub_str, prompt, arg_type)
+                if self.on_token:
+                    self.on_token(str_val)
 
                 if matching_word is not None:
                     for _ in range(token_counter - 1):
                         self.prompt_tokens.pop()
                         complete_arg_tokens.pop()
+                    if self.on_token:
+                        self.on_token(f"->{matching_word}")
                     self.prompt_tokens.extend(self.encode(matching_word))
                     complete_arg_tokens.extend(self.encode(matching_word))
                     sub_str = ""
@@ -294,7 +326,6 @@ class TokenGenerator:
                 else:
                     complete_arg_tokens.append(token)
                     self.prompt_tokens.append(token)
-
                 if '"' in str_val:
                     idx = str_val.index('"')
                     self.prompt_tokens.pop()
