@@ -37,7 +37,7 @@ This project extends beyond the base requirements with two additional features:
   running the model and exploring results in real time.
 
 
-![](screenshots\call_me_maybe_gif.gif)
+![]([screenshots\call_me_maybe_gif.gif](https://github.com/sukanta0011/Core_Rank03_call_me_maybe/blob/main/screenshots/call_me_maybe_gif.gif))
 
 [https://huggingface.co/spaces/sudas00/CallMeMayBe](https://huggingface.co/spaces/sudas00/CallMeMayBe)
 ---
