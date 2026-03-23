@@ -187,6 +187,8 @@ class FnInfo(BaseModel):
     @model_validator(mode='after')
     def extract_parameters(self) -> 'FnInfo':
         """Extract and validate parameter names and types from raw dict."""
+        args_names = []
+        args_types = {}
         for arg, val in self.parameters.items():
             if 'type' not in val:
                 raise ValueError(
@@ -199,8 +201,11 @@ class FnInfo(BaseModel):
                     f"parameter: {arg} has type unknown "
                     f"'{arg_type}' types."
                 )
-            self.args_names.append(arg)
-            self.args_types[arg] = arg_type
+            args_names.append(arg)
+            args_types[arg] = arg_type
+
+        self.args_names = args_names
+        self.args_types = args_types
 
         return self
 

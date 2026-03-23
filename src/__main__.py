@@ -16,64 +16,64 @@ from .tokenizer import Tokenizer
 from .custom_errors import SourceError
 
 
-# def custom_prompts() -> List[str]:
-#     prompts = [
-#             # "Replace all alphabets in 'hi1245 assuu152' with digit 0",
-#             "Replace all the alphabets in 'hi1245 assuu152' with digit 0",
-#             "Replace all numbers in \"Hello 34 I'm "
-#             "233 years old\" with NUMBERS",
-#             "Substitute the digits in the string 'Hello"
-#             " 34 I'm 233 years old' with 'NUMBERS'",
-#             "Substitute all alphabet between a-z in the "
-#             "string 'Hello 34 I'm 233 years old' with digits",
-#             # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
-#             # "Replace all vowels in 'Programming is fun' with asterisks",
-#             "Replace consonants in 'Programming is fun' with hash",
-#             "Substitute the word 'cat' with 'dog' in "
-#             "'The cat sat on the mat with another cat'",
-#             "Replace the 'space' in 'Programming is fun' with 'underscore'",
-#             "Replace the spaces in 'Programming is fun' with underscore",
-#             "Replace all spaces in 'Programming   is fun' with underscore",
-#             # "replace the user in email id user@email.com with user123",
-#             # "replace the 'user' in email id 'user@email.com'"
-#               " with 'user123'",
-#             # "replace all a in the word hella warld with o",
-#             # "replace all 'a' in the word 'hella warld' with 'o'",
+def custom_prompts() -> List[str]:
+    prompts = [
+            # "Replace all alphabets in 'hi1245 assuu152' with digit 0",
+            # "Replace all the alphabets in 'hi1245 assuu152' with digit 0",
+            # "Replace all numbers in \"Hello 34 I'm "
+            # "233 years old\" with NUMBERS",
+            # "Substitute the digits in the string 'Hello"
+            # " 34 I'm 233 years old' with 'NUMBERS'",
+            # "Substitute all alphabet between a-z in the "
+            # "string 'Hello 34 I'm 233 years old' with digits",
+            # "Replace all '[aeiou]' in 'Programming is fun' with '*'",
+            # "Replace all vowels in 'Programming is fun' with asterisks",
+            # "Replace consonants in 'Programming is fun' with hash",
+            # "Substitute the word 'cat' with 'dog' in "
+            # "'The cat sat on the mat with another cat'",
+            # "Replace the 'space' in 'Programming is fun' with 'underscore'",
+            # "Replace the spaces in 'Programming is fun' with underscore",
+            # "Replace all spaces in 'Programming   is fun' with underscore",
+            # "replace the user in email id user@email.com with user123",
+            # "replace the 'user' in email id 'user@email.com'"
+            #   " with 'user123'",
+            # "replace all a in the word hella warld with o",
+            # "replace all 'a' in the word 'hella warld' with 'o'",
 
-#             # "what is the sum of -21567850.25 and 30.5545665427?",
-#             # "what is the sum of -520, -2.5 and -30?",
+            "what is the sum of -21567850.25 and 30.5545665427?",
+            # "what is the sum of -520, -2.5 and -30?",
 
-#             # "reverse sukanta das",
-#             # "reverse 'sukanta das'",
-#             # "'reverse' 'sukanta'",
-#             # "reverse sukanta",
-#             # "write sukanta from end to start",
-#             # "write 'sukanta' from end to start",
+            # "reverse sukanta das",
+            # "reverse 'sukanta das'",
+            # "'reverse' 'sukanta'",
+            # "reverse sukanta",
+            # "write sukanta from end to start",
+            # "write 'sukanta' from end to start",
 
-#             # "Greet sukanta das",
-#             # "Greet 'sukanta das'",
-#             # "Greet mr. das",
-#             # "hi mr. unnamed",
-#             # "'Greet mr. unnamed",
-#             # "Greet ram",
-#             # "Greet shrek",
-#             # "Greet Shrek",
-#             # "Greet 'Shrek 1234'",
-#             # "'hello' 'Shrek'",
-#             # "'Greet John'",
-#             # "'Welcome John'",
-#             # "'Hello' 'John'",
-#             # "let us all welcome shreak to the party",
-#             # "what is your name? ",
+            # "Greet sukanta das",
+            # "Greet 'sukanta das'",
+            # "Greet mr. das",
+            # "hi mr. unnamed",
+            # "'Greet mr. unnamed",
+            # "Greet ram",
+            # "Greet shrek",
+            # "Greet Shrek",
+            # "Greet 'Shrek 1234'",
+            # "'hello' 'Shrek'",
+            # "'Greet John'",
+            # "'Welcome John'",
+            # "'Hello' 'John'",
+            # "let us all welcome shreak to the party",
+            # "what is your name? ",
 
-#             # "'Mango is a fruit' is a true statement",
-#             # "'Mango is a fruit' is a correct statement",
-#             # "'Mango is a fruit' is a right answer",
-#             # "'Mango is a vegetable' is a wrong answer",
-#             # "Mango is not a vegetable",
-#             # "Mango is a vegetable. Wrong",
-#         ]
-#     return prompts
+            # "'Mango is a fruit' is a true statement",
+            # "'Mango is a fruit' is a correct statement",
+            # "'Mango is a fruit' is a right answer",
+            # "'Mango is a vegetable' is a wrong answer",
+            # "Mango is not a vegetable",
+            # "Mango is a vegetable. Wrong",
+        ]
+    return prompts
 
 
 def initialize_pipeline(
@@ -113,16 +113,16 @@ def function_generator(
     out = Output()
     cost = GenerationCost()
     out.prompt = prompt
-    decoder.tkn_generator.re_initialize_prompt_token()
+    decoder._tkn_generator.re_initialize_prompt_token()
 
     initial_token = build_initial_prompt(
         prompt, decoder.functions, decoder.encode)
-    decoder.tkn_generator.add_to_prompt(initial_token)
+    decoder._tkn_generator.add_to_prompt(initial_token)
     decoder.generate(prompt, out)
 
     end = time.time()
     cost.time_taken_seconds = round((end - start), 3)
-    cost.token_used = decoder.tkn_generator.get_total_token_spend()
+    cost.token_used = decoder._tkn_generator.get_total_token_spend()
     return out, cost
 
 
