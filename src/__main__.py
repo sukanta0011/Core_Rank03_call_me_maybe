@@ -125,7 +125,7 @@ def function_generator(
 def main() -> None:
     try:
         start = time.time()
-        llm = Small_LLM_Model(device='cuda')
+        llm = Small_LLM_Model(device='cpu')
         token_path = llm.get_path_to_vocab_file()
         tokenizer = Tokenizer(path=token_path)
         encode = tokenizer.encode

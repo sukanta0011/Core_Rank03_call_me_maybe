@@ -2,10 +2,10 @@ import os
 import threading
 import streamlit as st
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, Any
 from llm_sdk import Small_LLM_Model
 from src.tokenizer import Tokenizer
-from src.parser import FnInfo, ResourcePaths
+from src.parser import ResourcePaths
 from src.constrain_decoder import ConstrainDecoder
 from src.__main__ import function_generator
 
@@ -28,7 +28,7 @@ def load_shared_resources() -> Tuple:
         Path("data/output/function_calling_results.json")
 
     with st.spinner("Loading Qwen3-0.6B... first run takes 2-3 minutes"):
-        llm = Small_LLM_Model(device='cuda')
+        llm = Small_LLM_Model(device='cpu')
         token_path = llm.get_path_to_vocab_file()
         tokenizer = Tokenizer(path=token_path)
         token_set = tokenizer.get_all_tokes()
@@ -43,7 +43,7 @@ def load_shared_resources() -> Tuple:
     return llm, functions, token_set, tokenizer, lock
 
 
-def get_session_decoder() -> ConstrainDecoder:
+def get_session_decoder() -> Any:
     if "decoder" not in st.session_state:
         llm, functions, token_set, tokenizer, lock =\
             load_shared_resources()

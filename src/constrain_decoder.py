@@ -64,7 +64,7 @@ class ConstrainDecoder:
                  functions: List[FnInfo],
                  token_set: List[str],
                  encode: Callable, decode: Callable,
-                 interface_lock: threading.Lock = None,
+                 interface_lock: threading.Lock | None = None,
                  ) -> None:
         """Initialise the decoder with model and function registry.
 

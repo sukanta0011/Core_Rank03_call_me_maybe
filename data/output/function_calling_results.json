@@ -1,87 +1,74 @@
 [
     {
         "prompt": "What is the product of 3 and 5?",
-        "name": "fn_multiply_numbers",
+        "name": "fn_greet",
         "parameters": {
-            "a": 3.0,
-            "b": 5.0
+            "name": "3"
         }
     },
     {
         "prompt": "What is the product of 12 and 4?",
-        "name": "fn_multiply_numbers",
+        "name": "fn_substitute_string_with_regex",
         "parameters": {
-            "a": 12.0,
-            "b": 4.0
+            "source_string": "What is the product of 12 and 4?",
+            "regex": "",
+            "replacement": "1  2  4  ,"
         }
     },
     {
         "prompt": "Is 4 an even number?",
-        "name": "fn_is_even",
+        "name": "fn_greet",
         "parameters": {
-            "n": 4
+            "name": "4"
         }
     },
     {
         "prompt": "Is 7 an even number?",
-        "name": "fn_is_even",
+        "name": "fn_greet",
         "parameters": {
-            "n": 7
+            "name": "7"
         }
     },
     {
         "prompt": "Calculate compound interest on 1234567.89 at 0.0375 rate for 23 years",
-        "name": "fn_calculate_compound_interest",
+        "name": "fn_greet",
         "parameters": {
-            "principal": 1234567.89,
-            "rate": 0.0375,
-            "years": 23
+            "name": "Question"
         }
     },
     {
         "prompt": "Execute SQL query 'SELECT * FROM users' on the production database",
-        "name": "fn_execute_sql_query",
-        "parameters": {
-            "query": "SELECT * FROM users",
-            "database": "production"
-        }
+        "name": "",
+        "parameters": {}
     },
     {
         "prompt": "Run the query 'INSERT INTO logs VALUES (1, 2, 3)' on the system database",
-        "name": "fn_execute_sql_query",
+        "name": "fn_add_numbers",
         "parameters": {
-            "query": "INSERT INTO logs VALUES (1, 2, 3)",
-            "database": "system"
+            "a": 1.0,
+            "b": 2.0
         }
     },
     {
         "prompt": "Read the file at /home/user/data.json with utf-8 encoding",
-        "name": "fn_read_file",
-        "parameters": {
-            "path": "home/user/data.json",
-            "encoding": "utf-8"
-        }
+        "name": "",
+        "parameters": {}
     },
     {
         "prompt": "Read C:\\Users\\john\\config.ini with latin-1 encoding",
-        "name": "fn_read_file",
+        "name": "fn_greet",
         "parameters": {
-            "path": "C:\\Users\\john\\config.ini",
-            "encoding": "latin-1"
+            "name": "john"
         }
     },
     {
         "prompt": "Format template: Hello {user}'s profile!",
-        "name": "fn_format_template",
-        "parameters": {
-            "template": "Hello {user}'s profile!"
-        }
+        "name": "",
+        "parameters": {}
     },
     {
         "prompt": "Format template: Say \"hello\" to {name}",
-        "name": "fn_format_template",
-        "parameters": {
-            "template": "Say 'hello' to {name}"
-        }
+        "name": "",
+        "parameters": {}
     }
 ]

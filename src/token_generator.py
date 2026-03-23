@@ -3,7 +3,7 @@ import numpy as np
 import threading
 import re
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Optional
 from llm_sdk import Small_LLM_Model
 from .helper_functions import is_valid_num
 from .parser import FnInfo
@@ -108,7 +108,7 @@ class TokenGenerator:
             decode: Callable[[int], str],
             token_limit: int = ConstantParams.TOKEN_LIMITS,
             on_token: Optional[Callable[[str], None]] = None,
-            interface_lock: threading.Lock = None
+            interface_lock: threading.Lock | None = None
             ) -> None:
         """Initialise with model, vocabulary, and codec functions."""
         self.prompt_tokens: List[int] = []
