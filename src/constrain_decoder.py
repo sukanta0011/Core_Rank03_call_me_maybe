@@ -1,6 +1,7 @@
 import time
 import threading
 from typing import List, Callable, Any, Optional
+from pydantic import BaseModel, Field, ConfigDict, PrivateAttr
 import re
 from llm_sdk import Small_LLM_Model
 from .token_generator import TokenGenerator, ConstantParams
@@ -38,12 +39,13 @@ def build_initial_prompt(prompt: str, functions: List[FnInfo],
         "Example: 'Question': 'Greet Sukanta' -> "
         "'fn_name': 'fn_greet', 'args': {'name': 'Sukanta'}\n"
         )
+    # print(pre_prompt)
 
     tokens: List[int] = encode(pre_prompt)
     return tokens
 
 
-class ConstrainDecoder:
+class ConstrainDecoder(BaseModel):
     """Translates natural language prompts into structured function calls.
 
     Uses constrained decoding to guarantee:
@@ -60,40 +62,35 @@ class ConstrainDecoder:
         result = decoder.process(prompt)
         print(result.name, result.parameters)
     """
-    def __init__(self, llm: Small_LLM_Model,
-                 functions: List[FnInfo],
-                 token_set: List[str],
-                 encode: Callable, decode: Callable,
-                 interface_lock: threading.Lock | None = None,
-                 ) -> None:
-        """Initialise the decoder with model and function registry.
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    llm: Small_LLM_Model
+    functions: List[FnInfo]
+    token_set: List[str]
+    encode: Callable
+    decode: Callable
+    interface_lock: Optional[threading.Lock | None] = Field(default=None)
+    _tkn_generator: TokenGenerator = PrivateAttr()
 
-        Args:
-            llm: The language model to use for generation
-            functions: Available functions with schema info
-            token_set: Full vocabulary token list for pattern matching
-            encode: Tokenizer encode function
-            decode: Tokenizer decode function
-        """
-        self.llm = llm
-        self.functions = functions
-        self.tkn_generator = TokenGenerator(
-            llm, token_set, encode, decode,
-            ConstantParams.TOKEN_LIMITS,
-            interface_lock=interface_lock)
-        self.encode = encode
-        self.decode = decode
+    def model_post_init(self, __context: Any) -> None:
+        """initialize the token generator"""
+        self._tkn_generator = TokenGenerator(
+            llm=self.llm, token_set=self.token_set,
+            encode=self.encode,
+            decode=self.decode,
+            tkn_limits=ConstantParams.TOKEN_LIMITS,
+            lock=self.interface_lock)
 
     def add_str_to_prompt(self, string: str) -> int:
+        """convert string to token and add to the prompt tokens"""
         token_patch = self.encode(string)
-        return self.tkn_generator.add_to_prompt(token_patch)
+        return self._tkn_generator.add_to_prompt(token_patch)
 
     def set_callback(
             self,
             callback: Optional[Callable[[str], None]]
             ) -> None:
         """Set or clear the streaming token callback."""
-        self.tkn_generator.on_token = callback
+        self._tkn_generator.on_token = callback
 
     def generate(self, prompt: str, out: Output) -> None:
         """Process a single natural language prompt.
@@ -111,7 +108,7 @@ class ConstrainDecoder:
         self.add_str_to_prompt('{"name": "')
         # print(f"prompt: {self.tokenizer.decode(
         #     self.constrain_decoder.prompt_tokens)}")
-        final_fn = self.tkn_generator.\
+        final_fn = self._tkn_generator.\
             generate_function_name(self.functions)
 
         final_fn_name = self.decode(final_fn[: -1])
@@ -163,7 +160,7 @@ class ConstrainDecoder:
                 self.add_str_to_prompt(f'"{arg}": ')
             else:
                 self.add_str_to_prompt(f'"{arg}": "')
-            arg_val_token, prompt_tokens = self.tkn_generator.\
+            arg_val_token, prompt_tokens = self._tkn_generator.\
                 generate_args_val(
                     prompt_tokens, arg, arg_type, original_prompt, 2)
             arg_val_str = self.decode(arg_val_token)
@@ -234,21 +231,21 @@ class ConstrainDecoder:
 
             out = Output()
             out.prompt = prompt.prompt
-            self.tkn_generator.re_initialize_prompt_token()
+            self._tkn_generator.re_initialize_prompt_token()
             initial_token = build_initial_prompt(
                 prompt.prompt, self.functions, self.encode)
             # print(f"prompt: {self.tokenizer.decode(initial_token)}")
 
-            self.tkn_generator.add_to_prompt(initial_token)
+            self._tkn_generator.add_to_prompt(initial_token)
             self.generate(prompt.prompt, out)
-            final_token = self.tkn_generator.get_prompt()
+            final_token = self._tkn_generator.get_prompt()
             print(self.decode(final_token[len(initial_token):]))
 
             outputs.append(out)
 
             end = time.time()
             time_taken = round((end - start), 3)
-            tokens_spend = self.tkn_generator.get_total_token_spend()
+            tokens_spend = self._tkn_generator.get_total_token_spend()
             avg_cost = round(time_taken / tokens_spend, 3)
             print(f"\033[92mTokens Used: {tokens_spend},"
                   f" Time: {time_taken}s, Cost/Token: {avg_cost}s\033[0m")

@@ -96,7 +96,11 @@ def initialize_pipeline(
     token_set = tokenizer.get_all_tokes()
 
     decoder = ConstrainDecoder(
-        llm, functions, token_set, tokenizer.encode, tokenizer.decode)
+        llm=llm,
+        functions=functions,
+        token_set=token_set,
+        encode=tokenizer.encode,
+        decode=tokenizer.decode)
 
     return decoder, functions
 
@@ -147,8 +151,11 @@ def main() -> None:
         # prompts = parser.load_prompts(prompts)
 
         prompt_generator = ConstrainDecoder(
-            llm, functions, token_set,
-            encode, decode)
+                llm=llm,
+                functions=functions,
+                token_set=token_set,
+                encode=encode,
+                decode=decode)
 
         def on_token(token_str: str) -> None:
             print(token_str)

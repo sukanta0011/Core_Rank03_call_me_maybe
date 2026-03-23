@@ -3,7 +3,8 @@ import numpy as np
 import threading
 import re
 from dataclasses import dataclass
-from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict, PrivateAttr
+from typing import Optional, Any
 from llm_sdk import Small_LLM_Model
 from .helper_functions import is_valid_num
 from .parser import FnInfo
@@ -49,8 +50,7 @@ class ConstantParams:
     })
 
 
-@dataclass
-class GenerationCost:
+class GenerationCost(BaseModel):
     """Tracks resource usage for a single generation pass.
 
     Attributes:
@@ -62,8 +62,8 @@ class GenerationCost:
         print(cost.avg_time)  # 0.0833
     """
 
-    token_used: int = 0
-    time_taken_seconds: float = 0.0
+    token_used: int = Field(default=0)
+    time_taken_seconds: float = Field(default=0)
 
     @property
     def avg_time(self) -> float:
@@ -73,7 +73,7 @@ class GenerationCost:
         return round(self.time_taken_seconds / self.token_used, 4)
 
 
-class TokenGenerator:
+class TokenGenerator(BaseModel):
     """Generates token sequences for function names and argument values
     using constrained decoding over a language model's logits.
 
@@ -99,32 +99,27 @@ class TokenGenerator:
         arg_tokens, _ = generator.generate_args_val(
             allowed_tokens, 'name', 'string', prompt, soft_bias=2)
     """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(
-            self,
-            llm: Small_LLM_Model,
-            token_set: List[str],
-            encode: Callable[[str], List[int]],
-            decode: Callable[[int], str],
-            token_limit: int = ConstantParams.TOKEN_LIMITS,
-            on_token: Optional[Callable[[str], None]] = None,
-            interface_lock: threading.Lock | None = None
-            ) -> None:
-        """Initialise with model, vocabulary, and codec functions."""
-        self.prompt_tokens: List[int] = []
-        self.llm = llm
-        self.encode = encode
-        self.decode = decode
-        self.tkn_limits = token_limit
-        self.token_set = token_set
-        self.tokens_spend = 0
-        self.on_token = on_token
-        self._lock = interface_lock
+    llm: Small_LLM_Model
+    token_set: List[str]
+    encode: Callable[[str], List[int]]
+    decode: Callable[[int], str]
+    tkn_limits: int = Field(default=ConstantParams.TOKEN_LIMITS)
+    on_token: Optional[Callable[[str], None]] = Field(default=None)
+    lock: threading.Lock | None = Field(default=None)
+    tokens_spend: int = 0
+    prompt_tokens: List[int] = []
 
+    _regex: List[int] = PrivateAttr()
+    _symbols: List[int] = PrivateAttr()
+
+    def model_post_init(self, __context: Any) -> None:
+        """initialize regex and symbols"""
         # Precomputed at init to avoid recomputing on every generation step
-        self._regex = self.get_str_to_matching_tokens(
+        self._regex: List[int] = self.get_str_to_matching_tokens(
             ConstantParams.REGEX_CHAR)
-        self._symbols = self.get_str_to_matching_tokens(
+        self._symbols: List[int] = self.get_str_to_matching_tokens(
             ConstantParams.SYMBOL_CHAR)
 
     def get_prompt(self) -> List[int]:
@@ -166,8 +161,8 @@ class TokenGenerator:
 
     def _get_logits(self) -> List[float]:
         """Get logits with lock to prevent concurrent inference."""
-        if self._lock:
-            with self._lock:
+        if self.lock:
+            with self.lock:
                 raw = self.llm.get_logits_from_input_ids(
                     self.prompt_tokens)
         else:

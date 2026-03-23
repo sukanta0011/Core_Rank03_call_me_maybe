@@ -48,8 +48,10 @@ def get_session_decoder() -> Any:
         llm, functions, token_set, tokenizer, lock =\
             load_shared_resources()
         st.session_state.decoder = ConstrainDecoder(
-            llm, functions, token_set,
-            tokenizer.encode, tokenizer.decode,
+            llm=llm, functions=functions,
+            token_set=token_set,
+            encode=tokenizer.encode,
+            decode=tokenizer.decode,
             interface_lock=lock)
     return st.session_state.decoder
 
