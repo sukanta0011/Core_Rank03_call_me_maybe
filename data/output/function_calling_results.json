@@ -1,74 +1,87 @@
 [
     {
-        "prompt": "What is the product of 3 and 5?",
-        "name": "fn_greet",
-        "parameters": {
-            "name": "3"
-        }
-    },
-    {
-        "prompt": "What is the product of 12 and 4?",
-        "name": "fn_substitute_string_with_regex",
-        "parameters": {
-            "source_string": "What is the product of 12 and 4?",
-            "regex": "",
-            "replacement": "1  2  4  ,"
-        }
-    },
-    {
-        "prompt": "Is 4 an even number?",
-        "name": "fn_greet",
-        "parameters": {
-            "name": "4"
-        }
-    },
-    {
-        "prompt": "Is 7 an even number?",
-        "name": "fn_greet",
-        "parameters": {
-            "name": "7"
-        }
-    },
-    {
-        "prompt": "Calculate compound interest on 1234567.89 at 0.0375 rate for 23 years",
-        "name": "fn_greet",
-        "parameters": {
-            "name": "Question"
-        }
-    },
-    {
-        "prompt": "Execute SQL query 'SELECT * FROM users' on the production database",
-        "name": "",
-        "parameters": {}
-    },
-    {
-        "prompt": "Run the query 'INSERT INTO logs VALUES (1, 2, 3)' on the system database",
+        "prompt": "What is the sum of 2 and 3?",
         "name": "fn_add_numbers",
         "parameters": {
-            "a": 1.0,
-            "b": 2.0
+            "a": 2.0,
+            "b": 3.0
         }
     },
     {
-        "prompt": "Read the file at /home/user/data.json with utf-8 encoding",
-        "name": "",
-        "parameters": {}
+        "prompt": "What is the sum of 265 and 345?",
+        "name": "fn_add_numbers",
+        "parameters": {
+            "a": 265.0,
+            "b": 345.0
+        }
     },
     {
-        "prompt": "Read C:\\Users\\john\\config.ini with latin-1 encoding",
+        "prompt": "Greet shrek",
+        "name": "fn_greet",
+        "parameters": {
+            "name": "shrek"
+        }
+    },
+    {
+        "prompt": "Greet john",
         "name": "fn_greet",
         "parameters": {
             "name": "john"
         }
     },
     {
-        "prompt": "Format template: Hello {user}'s profile!",
-        "name": "",
-        "parameters": {}
+        "prompt": "Reverse the string 'hello'",
+        "name": "fn_reverse_string",
+        "parameters": {
+            "s": "hello"
+        }
     },
     {
-        "prompt": "Format template: Say \"hello\" to {name}",
-        "name": "",
-        "parameters": {}
+        "prompt": "Reverse the string 'world'",
+        "name": "fn_reverse_string",
+        "parameters": {
+            "s": "world"
+        }
+    },
+    {
+        "prompt": "What is the square root of 16?",
+        "name": "fn_get_square_root",
+        "parameters": {
+            "a": 16.0
+        }
+    },
+    {
+        "prompt": "Calculate the square root of 144",
+        "name": "fn_get_square_root",
+        "parameters": {
+            "a": 144.0
+        }
+    },
+    {
+        "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "Hello 34 I'm 233 years old",
+            "regex": "([\\d]+)",
+            "replacement": "NUMBERS"
+        }
+    },
+    {
+        "prompt": "Replace all vowels in 'Programming is fun' with asterisks",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "Programming is fun",
+            "regex": "([aeiou])",
+            "replacement": "****"
+        }
+    },
+    {
+        "prompt": "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'",
+        "name": "fn_substitute_string_with_regex",
+        "parameters": {
+            "source_string": "The cat sat on the mat with another cat",
+            "regex": "cat",
+            "replacement": "dog"
+        }
     }
 ]
